@@ -70,14 +70,14 @@ function App:open()
     self.stack = { { name = "home" } }
     if not self:progress().seen_help then
         self:progress():setSeenHelp()
-        self.stack[2] = { name = "help" }
+        self.stack[2] = { name = "help", first_run = true }
     end
     self:render()
 end
 
 function App:build(route)
     if route.name == "home" then return HomeScreen.new{ app = self } end
-    if route.name == "help" then return HelpScreen.new{ app = self } end
+    if route.name == "help" then return HelpScreen.new{ app = self, first_run = route.first_run } end
     if route.name == "pack" then
         return PackScreen.new{ app = self, pack = self:catalog():pack(route.pack_id), page = route.page }
     end
@@ -304,8 +304,11 @@ function App:onMove()
     self:scheduleFlush()
 end
 
---- Records the solve, then shows the reveal after a short pause.
-function App:onSolved(game)
+--[[
+Records the solve, then shows the reveal after a short pause. frame (from
+the game screen) lets the reveal keep the board's cell size.
+]]
+function App:onSolved(game, frame)
     local progress, p = self:progress(), game.puzzle
     local locked_before = self:lockedPacks()
     progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
@@ -326,6 +329,7 @@ function App:onSolved(game)
         result = result,
         next = self:nextAfter(p),
         unlocked = unlocked,
+        frame = frame,
     }
     self.reveal_task = function()
         self.reveal_task = nil

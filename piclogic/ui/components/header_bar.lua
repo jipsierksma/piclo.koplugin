@@ -1,7 +1,7 @@
 --[[
-Header bar shared by all screens: back chevron on the left, the screen title
-left-aligned next to it, at most one icon button on the right, and a hairline
-divider underneath.
+Header bar shared by all screens: back chevron on the left (omitted when no
+on_back is given), the screen title left-aligned next to it, at most one
+icon button on the right, and a hairline divider underneath.
 ]]
 
 local TextWidget = require("ui/widget/textwidget")
@@ -15,7 +15,7 @@ HeaderBar.__index = HeaderBar
 function HeaderBar.new(opts)
     return setmetatable({
         title = opts.title or "",
-        back = IconButton.new{ icon = "back", on_tap = opts.on_back },
+        back = opts.on_back and IconButton.new{ icon = "back", on_tap = opts.on_back },
         right = opts.right,
         rect = { x = 0, y = 0, w = 0, h = 0 },
     }, HeaderBar)
@@ -33,13 +33,13 @@ function HeaderBar:layout(x, y, w)
     self.rect = { x = x, y = y, w = w, h = h }
     local t = Theme.touch
     local by = y + math.floor((h - t) / 2)
-    self.back:setRect(x + Theme.space.xs, by, t, t)
+    if self.back then self.back:setRect(x + Theme.space.xs, by, t, t) end
     local right_edge = x + w - Theme.space.l
     if self.right then
         self.right:setRect(x + w - Theme.space.xs - t, by, t, t)
         right_edge = self.right.rect.x - Theme.space.s
     end
-    self.text_x = self.back.rect.x + t + Theme.space.xs
+    self.text_x = self.back and (self.back.rect.x + t + Theme.space.xs) or (x + Theme.space.xl)
     self:freeText()
     if self.title == "" then return end
     self.text = TextWidget:new{
@@ -58,7 +58,7 @@ end
 function HeaderBar:paint(bb)
     local r = self.rect
     bb:paintRect(r.x, r.y, r.w, r.h, Theme.WHITE)
-    self.back:paint(bb)
+    if self.back then self.back:paint(bb) end
     if self.right then self.right:paint(bb) end
     if self.text then
         local size = self.text:getSize()
@@ -69,7 +69,7 @@ end
 
 --- The button under a point, or nil.
 function HeaderBar:buttonAt(x, y)
-    if self.back:contains(x, y) then return self.back end
+    if self.back and self.back:contains(x, y) then return self.back end
     if self.right and self.right:contains(x, y) then return self.right end
 end
 

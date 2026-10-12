@@ -1,7 +1,10 @@
 --[[
 Text button in two weights: primary is an inverted pill (white text on
-black), quiet is plain text. Both keep a full touch-height target. Pressed
-feedback inverts the target for one fast refresh.
+black), quiet is plain text. Both keep a full touch-height target.
+
+Pressed states keep the pill shape and stay pure black and white, because
+the "fast" waveform used for press feedback can't show grays: a primary
+button turns into an outlined pill, a quiet one into a black pill.
 ]]
 
 local Label = require("piclogic/ui/components/label")
@@ -19,18 +22,15 @@ function TextButton.new(opts)
         enabled = true,
         rect = { x = 0, y = 0, w = 0, h = 0 },
     }, TextButton)
-    self.label = Label.new{
-        text = opts.text,
-        role = "body",
-        color = opts.primary and Theme.WHITE or Theme.BLACK,
-    }
+    self.dark = Label.new{ text = opts.text, role = "body", color = Theme.BLACK }
+    self.light = Label.new{ text = opts.text, role = "body", color = Theme.WHITE }
     return self
 end
 
 --- Natural width: the text plus generous side padding (wider for pills).
 function TextButton:preferredWidth()
     local pad = self.primary and Theme.space.xxl or Theme.space.l
-    return self.label.w + 2 * pad
+    return self.dark.w + 2 * pad
 end
 
 function TextButton:setRect(x, y, w, h)
@@ -44,16 +44,21 @@ end
 
 function TextButton:paint(bb, pressed)
     local r = self.rect
+    local radius = math.floor(r.h / 2)
     bb:paintRect(r.x, r.y, r.w, r.h, Theme.WHITE)
-    if self.primary then
-        bb:paintRoundedRect(r.x, r.y, r.w, r.h, Theme.BLACK, math.floor(r.h / 2))
+    local filled = (self.primary and not pressed) or (not self.primary and pressed)
+    if filled then
+        bb:paintRoundedRect(r.x, r.y, r.w, r.h, Theme.BLACK, radius)
+    elseif self.primary then
+        bb:paintBorder(r.x, r.y, r.w, r.h, Theme.line.regular, Theme.BLACK, radius)
     end
-    self.label:paintIn(bb, r, "center")
-    if pressed then bb:invertRect(r.x, r.y, r.w, r.h) end
+    local label = filled and self.light or self.dark
+    label:paintIn(bb, r, "center")
 end
 
 function TextButton:free()
-    self.label:free()
+    self.dark:free()
+    self.light:free()
 end
 
 return TextButton

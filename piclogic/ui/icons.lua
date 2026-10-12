@@ -28,6 +28,22 @@ function Icons.path(name)
     return (Icons.dir or ".") .. "/" .. name .. ".svg"
 end
 
+--- Width over height from an SVG's viewBox (cached), or nil if unreadable.
+function Icons.aspect(name)
+    Icons.aspects = Icons.aspects or {}
+    local a = Icons.aspects[name]
+    if a == nil then
+        local f = io.open(Icons.path(name), "r")
+        local head = f and f:read(1024)
+        if f then f:close() end
+        local w, h = (head or ""):match('viewBox="[%d.%-]+[ ,]+[%d.%-]+[ ,]+([%d.]+)[ ,]+([%d.]+)"')
+        w, h = tonumber(w), tonumber(h)
+        a = (w and h and h > 0) and (w / h) or false
+        Icons.aspects[name] = a
+    end
+    return a or nil
+end
+
 function Icons.get(name, size)
     local key = name .. "@" .. size
     local icon = Icons.cache[key]
