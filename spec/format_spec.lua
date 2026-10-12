@@ -1,0 +1,20 @@
+local Format = require("piclogic/util/format")
+
+describe("duration", function()
+    it("formats minutes and seconds", function()
+        assert.are.equal("0:00", Format.duration(0))
+        assert.are.equal("0:07", Format.duration(7))
+        assert.are.equal("4:12", Format.duration(252))
+        assert.are.equal("59:59", Format.duration(3599))
+    end)
+
+    it("adds hours when needed", function()
+        assert.are.equal("1:02:03", Format.duration(3723))
+    end)
+
+    it("floors fractions and treats bad input as zero", function()
+        assert.are.equal("0:01", Format.duration(1.9))
+        assert.are.equal("0:00", Format.duration(nil))
+        assert.are.equal("0:00", Format.duration(-5))
+    end)
+end)
