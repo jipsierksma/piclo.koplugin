@@ -1,6 +1,8 @@
 --[[
 "How to play": short headed paragraphs plus a drawn example line, laid out
-into pages that turn with swipes and the page-turn keys.
+into pages that turn with swipes and the page-turn keys. On the first run it
+is an introduction rather than a submenu: no back button, and a "Got it"
+button to move on.
 ]]
 
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -12,6 +14,7 @@ local Glyphs = require("piclogic/ui/glyphs")
 local HeaderBar = require("piclogic/ui/components/header_bar")
 local Label = require("piclogic/ui/components/label")
 local Refresh = require("piclogic/ui/refresh")
+local TextButton = require("piclogic/ui/components/text_button")
 local Theme = require("piclogic/ui/theme")
 
 local HelpScreen = {}
@@ -34,9 +37,15 @@ local function content()
     }
 end
 
+--- opts: app, first_run (bool)
 function HelpScreen.new(opts)
-    local self = setmetatable({ app = opts.app, page = 1, widgets = {} }, HelpScreen)
-    self.header = HeaderBar.new{ title = _("How to play"), on_back = function() opts.app:back() end }
+    local app = opts.app
+    local self = setmetatable({ app = app, page = 1, widgets = {} }, HelpScreen)
+    local back = function() app:back() end
+    self.header = HeaderBar.new{ title = _("How to play"), on_back = (not opts.first_run) and back or nil }
+    if opts.first_run then
+        self.done_btn = TextButton.new{ text = _("Got it"), primary = true, on_tap = back }
+    end
     return self
 end
 
@@ -50,6 +59,7 @@ function HelpScreen:freeWidgets()
 end
 
 function HelpScreen:free()
+    if self.done_btn then self.done_btn:free() end
     self.header:freeText()
     self:freeWidgets()
 end
@@ -108,6 +118,12 @@ function HelpScreen:layout(dimen)
     self.x = math.floor((W - width) / 2)
     local top = Theme.header_h + Theme.space.l
     local bottom = H - Theme.touch - Theme.space.s
+    if self.done_btn then
+        local b = self.done_btn
+        local bw = math.max(b:preferredWidth(), Theme.touch * 4)
+        b:setRect(math.floor((W - bw) / 2), H - Theme.touch - Theme.space.l, bw, Theme.touch)
+        bottom = b.rect.y - Theme.touch
+    end
     self.pages = { {} }
     local y = top
     for k, item in ipairs(content()) do
@@ -136,6 +152,7 @@ function HelpScreen:paint(bb)
     self.header:paint(bb)
     for __, e in ipairs(self.pages[self.page]) do e.block.paint(bb, self.x, e.y) end
     if self.pager then self.pager:paintIn(bb, self.pager_rect, "center") end
+    if self.done_btn then self.done_btn:paint(bb) end
 end
 
 function HelpScreen:changePage(delta)
@@ -148,6 +165,9 @@ end
 
 function HelpScreen:onTap(ges)
     local btn = self.header:buttonAt(ges.pos.x, ges.pos.y)
+    if not btn and self.done_btn and self.done_btn:contains(ges.pos.x, ges.pos.y) then
+        btn = self.done_btn
+    end
     if btn then
         Refresh.press(self.window, btn.rect, function(bb) btn:paint(bb, true) end)
         return btn.on_tap()

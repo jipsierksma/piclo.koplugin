@@ -3,6 +3,12 @@ Reveal screen, the payoff: the finished picture drawn large in its reveal
 tones (no grid, no clues), the title in display size, one line about the
 time, and two actions. Also used to look at a solved picture again from the
 collection ("view" mode), where the main action is "Play again".
+
+Straight after a solve the picture keeps the board's exact cell size and
+height, so the grid seems to turn into the picture: the title sits where the
+column clues were and the actions where the toolbar was. It is centered
+horizontally (the grid sat right of center, past the row clues). When that
+doesn't fit, a general layout takes over.
 ]]
 
 local T = require("ffi/util").template
@@ -36,7 +42,8 @@ end
 
 --[[
 data: mode ("solved" | "view"), puzzle, elapsed, best, result
-({first, new_best}), revealed, next (puzzle or nil), unlocked (pack titles)
+({first, new_best}), revealed, next (puzzle or nil), unlocked (pack titles),
+frame ({cell, y, screen_w, screen_h} of the board just solved, optional)
 ]]
 function RevealScreen.new(opts)
     local app, data = opts.app, opts.data
@@ -92,6 +99,46 @@ function RevealScreen:layoutText(cx, y, col_w, measure_only)
     return h
 end
 
+-- The board-sized layout; returns false when it doesn't fit this screen.
+function RevealScreen:layoutFramed(W, H)
+    local f, p = self.data.frame, self.data.puzzle
+    if not f or f.screen_w ~= W or f.screen_h ~= H then return false end
+    local m = Theme.space.xl
+    local pw, ph = p.w * f.cell, p.h * f.cell
+
+    local texts = { self.title, self.summary }
+    for __, l in ipairs(self.unlocked) do texts[#texts + 1] = l end
+    local block_h = 0
+    for __, l in ipairs(texts) do block_h = block_h + l.h end
+    if block_h > f.y - 2 * m then return false end
+
+    local widths, row_w = {}, 0
+    for k, b in ipairs(self.buttons) do
+        widths[k] = math.max(b:preferredWidth(), Theme.touch * 4)
+        row_w = row_w + widths[k] + (k > 1 and Theme.space.l or 0)
+    end
+    local by = f.y + ph + m
+    if row_w > W - 2 * m or by + Theme.touch > H - Theme.space.l then return false end
+
+    self.box = { x = math.floor((W - pw) / 2), y = f.y, w = pw, h = ph }
+    self.text_cx = math.floor(W / 2)
+    self.text_pos = {}
+    local y = math.floor((f.y - block_h) / 2)
+    for __, l in ipairs(texts) do
+        self.text_pos[#self.text_pos + 1] = { item = l, y = y }
+        y = y + l.h
+    end
+    -- Secondary first, so the main action sits on the right.
+    local x = math.floor((W - row_w) / 2)
+    for k = #self.buttons, 1, -1 do
+        local b = self.buttons[k]
+        local w = widths[k]
+        b:setRect(x, by, w, Theme.touch)
+        x = x + w + Theme.space.l
+    end
+    return true
+end
+
 function RevealScreen:layout(dimen)
     Label.freeAll(self.labels)
     self.labels = {}
@@ -107,6 +154,7 @@ function RevealScreen:layout(dimen)
             max_width = col_w }
     end
 
+    if self:layoutFramed(W, H) then return end
     local box
     if landscape then
         box = { x = m, y = m, w = math.floor(W / 2) - 2 * m, h = H - 2 * m }

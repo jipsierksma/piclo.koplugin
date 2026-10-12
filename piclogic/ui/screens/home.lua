@@ -19,9 +19,6 @@ local Theme = require("piclogic/ui/theme")
 local HomeScreen = {}
 HomeScreen.__index = HomeScreen
 
--- Width over height of icons/wordmark.svg (its viewBox is 1760 x 460).
-local WORDMARK_ASPECT = 1760 / 460
-
 local function sizeText(puzzle)
     return T(_("%1×%2"), puzzle.w, puzzle.h)
 end
@@ -110,13 +107,15 @@ content width (or 60% of a landscape screen). Too little room: no wordmark.
 ]]
 function HomeScreen:layoutWordmark(y, W, H)
     self:freeWordmark()
+    local aspect = Icons.aspect("wordmark")
+    if not aspect then return y end
     local m = Theme.space.xl
     local below = (self.app:continueTarget() and Theme.card_h or 0) + 2 * Theme.space.l
         + Theme.touch + #self.app:catalog().packs * Theme.row_h + Theme.touch + Theme.space.s
     local max_w = W > H and math.floor(W * 0.6) or W - 2 * m
-    local h = math.min(math.floor(max_w / WORDMARK_ASPECT), H - y - below - 2 * Theme.space.l)
+    local h = math.min(math.floor(max_w / aspect), H - y - below - 2 * Theme.space.l)
     if h < Theme.touch then return y end
-    local w = math.floor(h * WORDMARK_ASPECT)
+    local w = math.floor(h * aspect)
     self.wordmark = {
         x = math.floor((W - w) / 2),
         y = y + Theme.space.l,

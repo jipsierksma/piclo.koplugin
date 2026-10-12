@@ -55,6 +55,7 @@ end
 -- Layout ----------------------------------------------------------------
 
 function GameScreen:layout(dimen)
+    self.dimen = dimen
     local W, H = dimen.w, dimen.h
     self.landscape = W > H
     self.header:layout(0, 0, W)
@@ -172,7 +173,14 @@ function GameScreen:onSolved()
         self.board:paint(bb)
         self:paintToolbar(bb)
     end)
-    self.app:onSolved(self.game)
+    -- Where the grid sat, so the reveal can show the picture at this size.
+    local g = self.board.geom
+    self.app:onSolved(self.game, g and {
+        cell = g.cell,
+        y = g.grid_y,
+        screen_w = self.dimen.w,
+        screen_h = self.dimen.h,
+    })
 end
 
 -- Buttons ---------------------------------------------------------------
