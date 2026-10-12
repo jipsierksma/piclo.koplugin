@@ -1,8 +1,9 @@
 --[[
-Immutable puzzle definition. Built from a data table with `rows` strings
-('#' filled, '.' empty) and an optional `shade` layer (digits 0-3 give the
-reveal gray of a filled pixel, '.' elsewhere). Clues are always derived from
-the rows, so they can never disagree with the picture.
+Immutable puzzle definition. Pack data gives either
+  * `art`: one grid of tone digits (0 = black .. SHADE_LEVELS - 1 = palest)
+    with '.' for empty cells; any digit is a filled cell in play, or
+  * `rows` ('#' filled, '.' empty) plus an optional matching `shade` grid.
+Clues are always derived from the picture, so they can never disagree.
 
 Puzzle.new never throws: on bad input it returns nil and a message.
 ]]
@@ -15,7 +16,7 @@ local Puzzle = {}
 Puzzle.__index = Puzzle
 
 Puzzle.MAX_SIZE = 50
-Puzzle.SHADE_LEVELS = 4
+Puzzle.SHADE_LEVELS = 5
 
 local function parseRows(rows)
     if type(rows) ~= "table" or #rows == 0 then
@@ -45,7 +46,9 @@ local function parseRows(rows)
     return cells, w, #rows
 end
 
-local function parseShade(shade, w, h)
+-- The shade layer must mirror the picture exactly, so the two can't drift
+-- apart when someone edits one of them.
+local function parseShade(shade, solution, w, h)
     if shade == nil then return nil end
     if type(shade) ~= "table" or #shade ~= h then
         return nil, "shade must have one string per row"
@@ -57,16 +60,34 @@ local function parseShade(shade, w, h)
         end
         for c = 1, w do
             local ch = row:sub(c, c)
+            local filled = solution[#levels + 1] == Cell.FILLED
             local v = tonumber(ch)
-            if ch == "." then
-                v = 0
-            elseif not v or v >= Puzzle.SHADE_LEVELS then
-                return nil, string.format("shade row %d col %d: unexpected %q", r, c, ch)
+            if filled and not (v and v < Puzzle.SHADE_LEVELS) then
+                return nil, string.format("shade row %d col %d: filled pixel needs a level, got %q", r, c, ch)
+            elseif not filled and ch ~= "." then
+                return nil, string.format("shade row %d col %d: empty pixel must be '.', got %q", r, c, ch)
             end
-            levels[#levels + 1] = v
+            levels[#levels + 1] = v or 0
         end
     end
     return levels
+end
+
+-- Splits an `art` tone grid into the equivalent rows and shade grids, so
+-- both forms go through the same checks.
+local function splitArt(art)
+    if type(art) ~= "table" then
+        return nil, nil, "art must be a list of strings"
+    end
+    local rows, shade = {}, {}
+    for r, line in ipairs(art) do
+        if type(line) ~= "string" then
+            return nil, nil, string.format("art row %d is not a string", r)
+        end
+        rows[r] = (line:gsub("%d", "#"))
+        shade[r] = line
+    end
+    return rows, shade
 end
 
 function Puzzle.new(def)
@@ -76,15 +97,26 @@ function Puzzle.new(def)
     if type(def.id) ~= "string" or def.id == "" then
         return nil, "puzzle needs a string id"
     end
-    local solution, w, h = parseRows(def.rows)
+    local rows_def, shade_def, err = def.rows, def.shade, nil
+    if def.art ~= nil then
+        if def.rows ~= nil or def.shade ~= nil then
+            return nil, def.id .. ": give either art or rows/shade, not both"
+        end
+        rows_def, shade_def, err = splitArt(def.art)
+        if not rows_def then
+            return nil, def.id .. ": " .. err
+        end
+    end
+    local solution, w, h = parseRows(rows_def)
     if not solution then
         return nil, def.id .. ": " .. w
     end
     if w > Puzzle.MAX_SIZE or h > Puzzle.MAX_SIZE then
         return nil, string.format("%s: %dx%d exceeds the maximum size", def.id, w, h)
     end
-    local shade, err = parseShade(def.shade, w, h)
-    if def.shade ~= nil and not shade then
+    local shade
+    shade, err = parseShade(shade_def, solution, w, h)
+    if shade_def ~= nil and not shade then
         return nil, def.id .. ": " .. err
     end
 

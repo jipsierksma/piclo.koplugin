@@ -6,16 +6,7 @@ Supports describe / it / before_each and the assert forms the specs use, so
 the same spec files also run under real busted.
 ]]
 
-package.path = "./?.lua;./spec/?.lua;" .. package.path
-
--- KOReader modules the data layer may touch, stubbed for plain Lua.
-package.preload["gettext"] = function()
-    return setmetatable({}, { __call = function(_, s) return s end })
-end
-package.preload["logger"] = function()
-    local function noop() end
-    return { dbg = noop, info = noop, warn = noop, err = noop }
-end
+dofile("tools/koreader_stubs.lua")
 
 local function deepEqual(a, b)
     if a == b then return true end

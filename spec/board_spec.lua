@@ -22,6 +22,12 @@ describe("planStroke", function()
         assert.are.equal("##x#.", row(board, 1))
     end)
 
+    it("fills along a drag that starts on a cross, leaving every X alone", function()
+        board = Board.new(6, 1, H.line("x..x.#"))
+        board:apply(board:planStroke(FILL, Grid.strokeIndices(6, 1, 1, 1, 6)))
+        assert.are.equal("x##x##", row(board, 1))
+    end)
+
     it("clears fills when the stroke starts on a filled cell", function()
         board = Board.new(5, 1, H.line("###x#"))
         board:apply(board:planStroke(FILL, { 2, 3, 4, 5 }))
