@@ -23,6 +23,11 @@ function Icons.init(plugin_dir)
     Icons.cache = {}
 end
 
+--- Full path of an icon file, e.g. Icons.path("wordmark").
+function Icons.path(name)
+    return (Icons.dir or ".") .. "/" .. name .. ".svg"
+end
+
 function Icons.get(name, size)
     local key = name .. "@" .. size
     local icon = Icons.cache[key]
@@ -31,7 +36,7 @@ function Icons.get(name, size)
             logger.warn("piclogic: icons used before init")
         end
         icon = IconWidget:new{
-            file = (Icons.dir or ".") .. "/" .. name .. ".svg",
+            file = Icons.path(name),
             width = size,
             height = size,
         }

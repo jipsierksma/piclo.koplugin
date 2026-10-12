@@ -34,10 +34,13 @@ Theme.REVEAL = {
 -- fontmap keys (frontend/ui/font.lua): tfont is Noto Sans Bold, cfont Noto
 -- Sans Regular, whose default figures are tabular, so clue digits align.
 local ROLES = {
-    title = { font = "tfont", size = 20 },
-    body = { font = "cfont", size = 17 },
-    numeric = { font = "cfont", size = 16 },
+    title = { font = "tfont", size = "title" },
+    body = { font = "cfont", size = "body" },
+    numeric = { font = "cfont", size = "body" },
 }
+
+-- Type scale in unscaled units; roles pick a size from here.
+local TYPE = { caption = 14, body = 17, title = 20, display = 30 }
 
 local SPACING = { xs = 4, s = 8, m = 12, l = 16, xl = 24, xxl = 32, xxxl = 48 }
 
@@ -48,10 +51,14 @@ function Theme.update()
     for k, v in pairs(SPACING) do Theme.space[k] = s(v) end
     Theme.header_h = s(56)
     Theme.touch = s(48)
-    Theme.icon = s(26)
+    Theme.icon = s(30)
     Theme.toolbar_h = s(64)
     Theme.min_cell = s(28)
     Theme.max_cell = s(72)
+    Theme.row_h = s(84)
+    Theme.card_h = s(120)
+    Theme.min_tile = s(96)
+    Theme.mark = s(8)
     -- scaleBySize is a ceil'd multiply; this ratio lets faceForPx undo it.
     Theme.scale = Screen:scaleBySize(1000) / 1000
     -- White gap between a filled square and its grid lines, so neighbouring
@@ -59,10 +66,10 @@ function Theme.update()
     Theme.fill_gap = math.max(1, math.floor(Theme.scale))
 end
 
---- Face for a type role at its standard size.
-function Theme.face(role)
+--- Face for a type role, at its own size or a named step of the type scale.
+function Theme.face(role, size)
     local r = ROLES[role]
-    return Font:getFace(r.font, r.size)
+    return Font:getFace(r.font, TYPE[size or r.size])
 end
 
 --[[

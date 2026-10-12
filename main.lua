@@ -1,10 +1,12 @@
 --[[
-Picture Logic: registers the menu entry and hands off to the app controller.
-Everything else lives under piclogic/. KOReader's plugin loader keeps this
-directory on package.path after loading (frontend/pluginloader.lua), so the
-namespaced requires below resolve when the menu is used.
+Picture Logic: registers the menu entry and a Dispatcher action (so it can
+be bound to a gesture or launched from a home-screen plugin), and hands off
+to the app controller. Everything else lives under piclogic/. KOReader's
+plugin loader keeps this directory on package.path after loading
+(frontend/pluginloader.lua), so the namespaced requires resolve later.
 ]]
 
+local Dispatcher = require("dispatcher")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
@@ -13,32 +15,36 @@ local PicLogic = WidgetContainer:extend{
     is_doc_only = false,
 }
 
+function PicLogic:onDispatcherRegisterActions()
+    Dispatcher:registerAction("piclogic_open", {
+        category = "none",
+        event = "PicLogicOpen",
+        title = _("Picture Logic"),
+        general = true,
+    })
+end
+
 function PicLogic:init()
+    self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function PicLogic:getApp()
-    if not self.app then
-        local App = require("piclogic/app")
-        self.app = App.new{ ui = self.ui, path = self.path }
-    end
-    return self.app
-end
-
 function PicLogic:addToMainMenu(menu_items)
-    -- Preview build: one entry per board size until the home screen lands.
-    local function play(index)
-        return function() self:getApp():openPack(index) end
-    end
     menu_items.piclogic = {
         text = _("Picture Logic"),
         sorting_hint = "tools",
-        sub_item_table = {
-            { text = _("Play 5×5"), callback = play(1) },
-            { text = _("Play 10×10"), callback = play(2) },
-            { text = _("Play 15×15"), callback = play(3) },
-        },
+        callback = function() self:onPicLogicOpen() end,
     }
+end
+
+function PicLogic:onPicLogicOpen()
+    if not self.app then
+        local App = require("piclogic/app")
+        -- version comes from _meta.lua, merged in by the plugin loader
+        self.app = App.new{ ui = self.ui, path = self.path, version = self.version }
+    end
+    self.app:open()
+    return true
 end
 
 return PicLogic
