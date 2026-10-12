@@ -23,8 +23,17 @@ describe("puzzle", function()
     end)
 
     it("parses an optional shade layer", function()
-        local p = assert(Puzzle.new({ id = "p", rows = { "##", ".#" }, shade = { "02", ".3" } }))
-        assert.are.same({ 0, 2, 0, 3 }, p.shade)
+        local p = assert(Puzzle.new({ id = "p", rows = { "##", ".#" }, shade = { "02", ".4" } }))
+        assert.are.same({ 0, 2, 0, 4 }, p.shade)
+    end)
+
+    it("reads a single tone grid as picture plus shade", function()
+        local p = assert(Puzzle.new({ id = "p", art = { "03.", ".42" } }))
+        assert.are.same({ { 2 }, { 2 } }, p.row_clues)
+        assert.are.same({ { 1 }, { 2 }, { 1 } }, p.col_clues)
+        assert.are.same({ 0, 3, 0, 0, 4, 2 }, p.shade)
+        assert.is_true(p:isFilled(1, 1))
+        assert.is_false(p:isFilled(1, 3))
     end)
 
     it("rejects malformed definitions without throwing", function()
@@ -35,9 +44,16 @@ describe("puzzle", function()
             { id = "p", rows = {} },
             { id = "p", rows = { "##", "#" } },
             { id = "p", rows = { "#?" } },
-            { id = "p", rows = { "#" }, shade = { "4" } },
+            { id = "p", rows = { "#" }, shade = { "5" } },
+            { id = "p", rows = { "#" }, shade = { "." } },
+            { id = "p", rows = { "." }, shade = { "0" } },
             { id = "p", rows = { "##" }, shade = { "0" } },
             { id = "p", rows = { "#", 7 } },
+            { id = "p", art = { "05" } },
+            { id = "p", art = { "0#" } },
+            { id = "p", art = { "01", "2" } },
+            { id = "p", art = "01" },
+            { id = "p", art = { "01" }, rows = { "##" } },
         }
         for _, def in ipairs(bad) do
             local p, err = Puzzle.new(def)
