@@ -4,15 +4,17 @@ tones (no grid, no clues), the title in display size, one line about the
 time, and two actions. Also used to look at a solved picture again from the
 collection ("view" mode), where the main action is "Play again".
 
-Straight after a solve the picture keeps the board's exact cell size and
-height, so the grid seems to turn into the picture: the title sits where the
-column clues were and the actions where the toolbar was. It is centered
-horizontally (the grid sat right of center, past the row clues). When that
-doesn't fit, a general layout takes over.
+The picture sits exactly on the board's grid, from the same placement the
+game screen uses (board_placement.lua), so the grid seems to turn into the
+picture. In portrait the title goes above it and the actions below; in
+landscape they stack beside it. Only when the text can't fit around the
+grid does a general layout take over.
 ]]
 
 local T = require("ffi/util").template
 local _ = require("gettext")
+local logger = require("logger")
+local BoardPlacement = require("piclogic/ui/board_placement")
 local Format = require("piclogic/util/format")
 local Label = require("piclogic/ui/components/label")
 local Layout = require("piclogic/ui/layout")
@@ -42,8 +44,7 @@ end
 
 --[[
 data: mode ("solved" | "view"), puzzle, elapsed, best, result
-({first, new_best}), revealed, next (puzzle or nil), unlocked (pack titles),
-frame ({cell, y, screen_w, screen_h} of the board just solved, optional)
+({first, new_best}), revealed, next (puzzle or nil), unlocked (pack titles)
 ]]
 function RevealScreen.new(opts)
     local app, data = opts.app, opts.data
@@ -76,76 +77,11 @@ function RevealScreen:label(opts)
     return l
 end
 
--- Lays the text column out centered on cx, starting at y; returns its height.
-function RevealScreen:layoutText(cx, y, col_w, measure_only)
-    local items = { self.title, self.summary }
-    local h, pos = 0, {}
-    for __, l in ipairs(items) do
-        pos[#pos + 1] = { item = l, y = y + h }
-        h = h + l.h
-    end
-    h = h + Theme.space.xxl
-    for __, b in ipairs(self.buttons) do
-        local w = math.min(col_w, math.max(b:preferredWidth(), Theme.touch * 4))
-        if not measure_only then b:setRect(cx - math.floor(w / 2), y + h, w, Theme.touch) end
-        h = h + Theme.touch + Theme.space.s
-    end
-    for __, l in ipairs(self.unlocked) do
-        h = h + Theme.space.s
-        pos[#pos + 1] = { item = l, y = y + h }
-        h = h + l.h
-    end
-    if not measure_only then self.text_pos = pos end
-    return h
-end
-
--- The board-sized layout; returns false when it doesn't fit this screen.
-function RevealScreen:layoutFramed(W, H)
-    local f, p = self.data.frame, self.data.puzzle
-    if not f or f.screen_w ~= W or f.screen_h ~= H then return false end
-    local m = Theme.space.xl
-    local pw, ph = p.w * f.cell, p.h * f.cell
-
-    local texts = { self.title, self.summary }
-    for __, l in ipairs(self.unlocked) do texts[#texts + 1] = l end
-    local block_h = 0
-    for __, l in ipairs(texts) do block_h = block_h + l.h end
-    if block_h > f.y - 2 * m then return false end
-
-    local widths, row_w = {}, 0
-    for k, b in ipairs(self.buttons) do
-        widths[k] = math.max(b:preferredWidth(), Theme.touch * 4)
-        row_w = row_w + widths[k] + (k > 1 and Theme.space.l or 0)
-    end
-    local by = f.y + ph + m
-    if row_w > W - 2 * m or by + Theme.touch > H - Theme.space.l then return false end
-
-    self.box = { x = math.floor((W - pw) / 2), y = f.y, w = pw, h = ph }
-    self.text_cx = math.floor(W / 2)
-    self.text_pos = {}
-    local y = math.floor((f.y - block_h) / 2)
-    for __, l in ipairs(texts) do
-        self.text_pos[#self.text_pos + 1] = { item = l, y = y }
-        y = y + l.h
-    end
-    -- Secondary first, so the main action sits on the right.
-    local x = math.floor((W - row_w) / 2)
-    for k = #self.buttons, 1, -1 do
-        local b = self.buttons[k]
-        local w = widths[k]
-        b:setRect(x, by, w, Theme.touch)
-        x = x + w + Theme.space.l
-    end
-    return true
-end
-
-function RevealScreen:layout(dimen)
+-- (Re)builds the labels for a text column of at most col_w.
+function RevealScreen:makeLabels(col_w)
     Label.freeAll(self.labels)
     self.labels = {}
-    local W, H = dimen.w, dimen.h
-    local p, m = self.data.puzzle, Theme.space.xxl
-    local landscape = W > H
-    local col_w = landscape and math.floor(W / 2) - 2 * m or W - 2 * m
+    local p = self.data.puzzle
     self.title = self:label{ text = p.title, role = "title", size = "display", max_width = col_w }
     self.summary = self:label{ text = RevealScreen.summary(self.data), color = Theme.SECONDARY, max_width = col_w }
     self.unlocked = {}
@@ -153,34 +89,160 @@ function RevealScreen:layout(dimen)
         self.unlocked[#self.unlocked + 1] = self:label{ text = T(_("New pack unlocked: %1"), title),
             max_width = col_w }
     end
+end
 
-    if self:layoutFramed(W, H) then return end
-    local box
-    if landscape then
-        box = { x = m, y = m, w = math.floor(W / 2) - 2 * m, h = H - 2 * m }
-        local text_h = self:layoutText(0, 0, col_w, true)
-        self.text_cx = math.floor(W * 3 / 4)
-        self:layoutText(self.text_cx, math.floor((H - text_h) / 2), col_w)
-    else
-        local text_h = self:layoutText(0, 0, col_w, true)
-        -- At most ~70% of the width, so even a 5x5 picture keeps a calm margin.
-        local bw = math.min(W - 2 * m, math.floor(W * 0.7))
-        local scale = Layout.fitPicture(p.w, p.h, bw, H - text_h - 3 * m)
-        local pic_h = p.h * scale
-        -- Center picture plus text as one block.
-        local top = math.floor((H - pic_h - m - text_h) / 2)
-        box = { x = math.floor((W - bw) / 2), y = top, w = bw, h = pic_h }
-        self.text_cx = math.floor(W / 2)
-        self:layoutText(self.text_cx, top + pic_h + m, col_w)
+-- Left edge for something w wide centered on cx, kept m inside the screen.
+local function centerOn(cx, w, W, m)
+    return math.max(m, math.min(W - m - w, cx - math.floor(w / 2)))
+end
+
+function RevealScreen:buttonWidth(b, max_w)
+    return math.min(max_w, math.max(b:preferredWidth(), Theme.touch * 4))
+end
+
+--[[
+Stacks title, time, buttons and unlock lines centered on cx from y; returns
+the height. measure_only just returns the height.
+]]
+function RevealScreen:layoutColumn(cx, y, col_w, measure_only)
+    local h, pos = 0, {}
+    local function text(l)
+        pos[#pos + 1] = { item = l, x = cx - math.floor(l.w / 2), y = y + h }
+        h = h + l.h
     end
-    self.box = box
+    text(self.title)
+    text(self.summary)
+    h = h + Theme.space.xxl
+    for __, b in ipairs(self.buttons) do
+        local w = self:buttonWidth(b, col_w)
+        if not measure_only then b:setRect(cx - math.floor(w / 2), y + h, w, Theme.touch) end
+        h = h + Theme.touch + Theme.space.s
+    end
+    for __, l in ipairs(self.unlocked) do
+        h = h + Theme.space.s
+        text(l)
+    end
+    if not measure_only then self.text_pos = pos end
+    return h
+end
+
+--[[
+Portrait, around the grid: title and time centered in the space above it,
+the buttons side by side (main action on the right) and any unlock lines in
+the space below. All centered on the picture. False when it doesn't fit.
+]]
+function RevealScreen:layoutAround(W, H, pic)
+    local m = Theme.space.xl
+    self:makeLabels(W - 2 * m)
+    local above_h = self.title.h + self.summary.h
+    if above_h > pic.y - 2 * m then return false end
+
+    local widths, row_w = {}, 0
+    for k, b in ipairs(self.buttons) do
+        widths[k] = self:buttonWidth(b, W - 2 * m)
+        row_w = row_w + widths[k] + (k > 1 and Theme.space.l or 0)
+    end
+    if row_w > W - 2 * m then return false end
+    local below_h = Theme.touch
+    for __, l in ipairs(self.unlocked) do below_h = below_h + Theme.space.s + l.h end
+    local bottom = pic.y + pic.h
+    local y = bottom + math.floor((H - bottom - below_h) / 2)
+    if y < bottom + m then return false end
+
+    local cx = pic.x + math.floor(pic.w / 2)
+    self.text_pos = {}
+    local ty = math.floor((pic.y - above_h) / 2)
+    for __, l in ipairs({ self.title, self.summary }) do
+        self.text_pos[#self.text_pos + 1] = { item = l, x = centerOn(cx, l.w, W, m), y = ty }
+        ty = ty + l.h
+    end
+    local x = centerOn(cx, row_w, W, m)
+    for k = #self.buttons, 1, -1 do
+        self.buttons[k]:setRect(x, y, widths[k], Theme.touch)
+        x = x + widths[k] + Theme.space.l
+    end
+    y = y + Theme.touch
+    for __, l in ipairs(self.unlocked) do
+        y = y + Theme.space.s
+        self.text_pos[#self.text_pos + 1] = { item = l, x = centerOn(cx, l.w, W, m), y = y }
+        y = y + l.h
+    end
+    return true
+end
+
+--[[
+Landscape, beside the grid: one column in the wider side (where the row
+clues or the toolbar rail were), so it gets a slim margin and buttons may
+give up some padding. False when the title or a button label would have to
+be cut short.
+]]
+function RevealScreen:layoutBeside(W, H, pic)
+    local zone_x, zone_w = 0, pic.x
+    if W - (pic.x + pic.w) > zone_w then
+        zone_x, zone_w = pic.x + pic.w, W - (pic.x + pic.w)
+    end
+    local col_w = zone_w - 2 * Theme.space.s
+    self:makeLabels(col_w)
+    if self.title.truncated then return false end
+    for __, b in ipairs(self.buttons) do
+        if b:minWidth() > col_w then return false end
+    end
+    local h = self:layoutColumn(0, 0, col_w, true)
+    if h > H - 2 * Theme.space.xl then return false end
+    self:layoutColumn(zone_x + math.floor(zone_w / 2), math.floor((H - h) / 2), col_w)
+    return true
+end
+
+-- Fallback when the text can't go around the grid: picture and text placed
+-- on their own.
+function RevealScreen:layoutGeneral(W, H)
+    local p, m = self.data.puzzle, Theme.space.xxl
+    if W > H then
+        local col_w = math.floor(W / 2) - 2 * m
+        self:makeLabels(col_w)
+        self.box = { x = m, y = m, w = math.floor(W / 2) - 2 * m, h = H - 2 * m }
+        local text_h = self:layoutColumn(0, 0, col_w, true)
+        self:layoutColumn(math.floor(W * 3 / 4), math.floor((H - text_h) / 2), col_w)
+        return
+    end
+    local col_w = W - 2 * m
+    self:makeLabels(col_w)
+    local text_h = self:layoutColumn(0, 0, col_w, true)
+    -- At most ~70% of the width, so even a 5x5 picture keeps a calm margin.
+    local bw = math.min(W - 2 * m, math.floor(W * 0.7))
+    local scale = Layout.fitPicture(p.w, p.h, bw, H - text_h - 3 * m)
+    local pic_h = p.h * scale
+    -- Center picture plus text as one block.
+    local top = math.floor((H - pic_h - m - text_h) / 2)
+    self.box = { x = math.floor((W - bw) / 2), y = top, w = bw, h = pic_h }
+    self:layoutColumn(math.floor(W / 2), top + pic_h + m, col_w)
+end
+
+function RevealScreen:layout(dimen)
+    local W, H = dimen.w, dimen.h
+    local p = self.data.puzzle
+    local placement = BoardPlacement.compute(p, W, H)
+    if placement.geom then
+        local pic = BoardPlacement.pictureBox(placement.geom)
+        local fits
+        if placement.landscape then
+            fits = self:layoutBeside(W, H, pic)
+        else
+            fits = self:layoutAround(W, H, pic)
+        end
+        if fits then
+            self.box = pic
+            return
+        end
+        logger.info("piclogic: reveal text does not fit around the board for", p.id)
+    end
+    self:layoutGeneral(W, H)
 end
 
 function RevealScreen:paint(bb)
     Picture.paint(bb, self.data.puzzle, self.box)
     for __, pos in ipairs(self.text_pos) do
-        local l = pos.item
-        l:paint(bb, self.text_cx - math.floor(l.w / 2), pos.y)
+        pos.item:paint(bb, pos.x, pos.y)
     end
     for __, b in ipairs(self.buttons) do b:paint(bb) end
 end

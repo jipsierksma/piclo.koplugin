@@ -304,11 +304,8 @@ function App:onMove()
     self:scheduleFlush()
 end
 
---[[
-Records the solve, then shows the reveal after a short pause. frame (from
-the game screen) lets the reveal keep the board's cell size.
-]]
-function App:onSolved(game, frame)
+-- Records the solve, then shows the reveal after a short pause.
+function App:onSolved(game)
     local progress, p = self:progress(), game.puzzle
     local locked_before = self:lockedPacks()
     progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
@@ -329,7 +326,6 @@ function App:onSolved(game, frame)
         result = result,
         next = self:nextAfter(p),
         unlocked = unlocked,
-        frame = frame,
     }
     self.reveal_task = function()
         self.reveal_task = nil

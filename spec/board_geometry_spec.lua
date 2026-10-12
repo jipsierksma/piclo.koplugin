@@ -40,11 +40,26 @@ describe("fit", function()
         assert.is_true(g.board.w <= 1072 and g.board.h <= 1200)
     end)
 
-    it("centers the board in the rect", function()
-        local g = fit(5, 5, 600, 800)
-        local left = g.board.x - 10
-        local right = 10 + 600 - (g.board.x + g.board.w)
+    it("centers the grid itself when the clues leave room", function()
+        local g = fit(5, 5, 600, 800, { max_cell = 40 })
+        local left = g.grid_x - 10
+        local right = 10 + 600 - (g.grid_x + 5 * g.cell)
         assert.is_true(math.abs(left - right) <= 1)
+        assert.is_true(g.board.x >= 10)
+    end)
+
+    it("shifts the grid only as far as the clues allow", function()
+        local g = fit(10, 10, 600, 800)
+        assert.is_true(g.board.x >= 10)
+        assert.is_true(g.board.x + g.board.w <= 610)
+        assert.are.equal(g.board.x + g.row_gutter + 3 + 2, g.grid_x)
+    end)
+
+    it("centers the whole board vertically", function()
+        local g = fit(5, 5, 600, 800)
+        local top = g.board.y - 20
+        local bottom = 20 + 800 - (g.board.y + g.board.h)
+        assert.is_true(math.abs(top - bottom) <= 1)
     end)
 
     it("respects max_cell", function()
