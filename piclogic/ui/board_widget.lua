@@ -1,16 +1,14 @@
 --[[
-Paints the board: clue gutters, cells and grid lines. Measurements (cell
-size, clue slots, font face, number widths, glyph bitmaps) are computed in
-layout() and cached; paint methods only draw.
+Paints the board: clue gutters, cells and grid lines. The geometry comes
+from board_placement; the font face, number widths and glyph bitmaps for it
+are cached in setGeometry(), and paint methods only draw.
 
 Changes are repainted cell by cell: paintChanges() redraws just the touched
 cells and clue strips and returns the rects that need refreshing.
 ]]
 
 local RenderText = require("ui/rendertext")
-local logger = require("logger")
 local Cell = require("piclogic/model/cell")
-local Geometry = require("piclogic/ui/board_geometry")
 local Glyphs = require("piclogic/ui/glyphs")
 local Grid = require("piclogic/model/grid")
 local Refresh = require("piclogic/ui/refresh")
@@ -19,40 +17,8 @@ local Theme = require("piclogic/ui/theme")
 local BoardWidget = {}
 BoardWidget.__index = BoardWidget
 
--- Clue numerals are this share of the cell size (spec: 55-60%).
-local CLUE_FONT_RATIO = 0.57
--- Digit metrics are measured once at this size and scaled while fitting.
-local REF_PX = 40
-
 local function rect(x, y, w, h)
     return { x = x, y = y, w = w, h = h }
-end
-
-local function refMetrics()
-    local face = Theme.faceForPx("numeric", REF_PX)
-    local adv = {}
-    for d = 0, 9 do
-        adv[tostring(d)] = RenderText:sizeUtf8Text(0, nil, face, tostring(d)).x
-    end
-    return { adv = adv, cap = RenderText:sizeUtf8Text(0, nil, face, "0").y_top }
-end
-
--- Clue slot sizes for a candidate cell size, from the reference metrics.
-local function slotsFor(cell, ref)
-    local px = math.max(1, math.floor(cell * CLUE_FONT_RATIO + 0.5))
-    local k = px / REF_PX
-    local min_w = math.floor(cell * 0.62 + 0.5)
-    local pad = math.floor(cell * 0.3 + 0.5)
-    local function textW(n)
-        local w = 0
-        for d in tostring(n):gmatch("%d") do w = w + ref.adv[d] end
-        return math.ceil(w * k)
-    end
-    return {
-        px = px,
-        slot_w = function(n) return math.max(min_w, textW(n) + pad) end,
-        slot_h = math.max(math.floor(cell * 0.62 + 0.5), math.ceil(ref.cap * k) + pad),
-    }
 end
 
 --- opts: game; show_crosses (default true); highlight_done (default true)
@@ -71,28 +37,12 @@ function BoardWidget:free()
     end
 end
 
-function BoardWidget:layout(area)
+--- Takes the geometry from board_placement and caches what painting needs.
+function BoardWidget:setGeometry(g)
     local p = self.game.puzzle
-    self.ref = self.ref or refMetrics()
-    local ref = self.ref
-    local g = Geometry.fit{
-        cols = p.w, rows = p.h,
-        row_clues = p.row_clues, col_clues = p.col_clues,
-        rect = area,
-        lines = Theme.line,
-        gap = Theme.space.s,
-        measure = function(cell) return slotsFor(cell, ref) end,
-        max_cell = Theme.max_cell,
-    }
     self.geom = g
     self:free()
-    if not g then
-        logger.warn("piclogic: board does not fit in", area.w, "x", area.h)
-        return
-    end
-    if g.cell < Theme.min_cell then
-        logger.info("piclogic: small cells", g.cell, "px for", p.id)
-    end
+    if not g then return end
 
     self.face = Theme.faceForPx("numeric", g.measure.px)
     self.cap_h = RenderText:sizeUtf8Text(0, nil, self.face, "0").y_top

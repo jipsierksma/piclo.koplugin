@@ -21,6 +21,7 @@ function Label.new(opts)
     }
     local size = self.widget:getSize()
     self.w, self.h = size.w, size.h
+    self.truncated = self.widget:isTruncated() and true or false
     return self
 end
 

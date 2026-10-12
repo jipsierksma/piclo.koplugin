@@ -92,6 +92,12 @@ end
 
 local function tapCell(screen, r, c) gesture("tap", cellPoint(screen, r, c)) end
 
+--- The game's grid as a picture box: where the reveal must draw.
+local function gridBox(screen)
+    local g = screen.board.geom
+    return { x = g.grid_x, y = g.grid_y, w = g.cols * g.cell, h = g.rows * g.cell }
+end
+
 local function solveByTapping(screen, game)
     local p = game.puzzle
     for r = 1, p.h do
@@ -238,10 +244,8 @@ describe("solving", function()
         end
         assert.is_true(flashed)
         local reveal = host.screen
-        -- same cell size and height as the board, centered horizontally
-        local g = screen.board.geom
-        assert.are.equal(game.puzzle.w * g.cell, reveal.box.w)
-        assert.are.equal(g.grid_y, reveal.box.y)
+        assert.are.same(gridBox(screen), reveal.box)
+        -- a 5x5 grid is centered, and so is its picture
         assert.is_true(math.abs(reveal.box.x * 2 + reveal.box.w - Screen.w) <= 1)
         assert.is_true(reveal.secondary.rect.x < reveal.primary.rect.x)
         assert.are.equal(reveal.secondary.rect.y, reveal.primary.rect.y)
@@ -254,16 +258,6 @@ describe("solving", function()
         tapRect(reveal.primary.rect)
         assert.are.equal("game", top())
         assert.are.equal(2, app.game.puzzle.number)
-    end)
-
-    it("keeps the board's size for a 15x15 reveal on the Oasis", function()
-        local _, screen, game = play(3, 1)
-        solveByTapping(screen, game)
-        local cell = screen.board.geom.cell
-        UIManager:runScheduled()
-        assert.are.equal(15 * cell, host.screen.box.w)
-        shot("reveal_15_portrait")
-        clean()
     end)
 
     it("announces a newly unlocked pack", function()
@@ -303,6 +297,49 @@ describe("solving", function()
         tapRect(host.screen.primary.rect)
         assert.are.equal("game", top())
         assert.is_true(app.game.board:isEmpty())
+    end)
+end)
+
+describe("reveal placement", function()
+    -- Oasis and a 6" screen in both orientations, plus a small 6" one.
+    local sizes = { { 1264, 1680 }, { 1680, 1264 }, { 1072, 1448 }, { 1448, 1072 }, { 758, 1024 } }
+    for _, size in ipairs(sizes) do
+        it("draws every picture exactly on its grid at " .. size[1] .. "x" .. size[2], function()
+            launch(size[1], size[2])
+            local misplaced = {}
+            for pi, pack in ipairs(app:catalog().packs) do
+                for k = 1, #pack.puzzles do
+                    local _, screen, game = play(pi, k, size[1], size[2])
+                    local grid = gridBox(screen)
+                    solveByTapping(screen, game)
+                    UIManager:runScheduled()
+                    assert.are.equal("reveal", top())
+                    local box = host.screen.box
+                    if box.x ~= grid.x or box.y ~= grid.y or box.w ~= grid.w or box.h ~= grid.h then
+                        misplaced[#misplaced + 1] = game.puzzle.id
+                    end
+                    clean()
+                end
+            end
+            assert.are.same({}, misplaced)
+            if size[1] == 1680 then shot("reveal_landscape_solved") end
+        end)
+    end
+
+    it("draws a collection picture where its board will be", function()
+        launch()
+        app:back()
+        local p = app:catalog().packs[2].puzzles[1]
+        app:progress():markSolved(p.id, 42)
+        app:openPuzzle(p)
+        assert.are.equal("reveal", top())
+        host:handleEvent(Event:new("SetRotationMode", 1))
+        assert.is_true(Screen.w > Screen.h)
+        local box = host.screen.box
+        clean()
+        tapRect(host.screen.primary.rect)
+        assert.are.equal("game", top())
+        assert.are.same(gridBox(host.screen), box)
     end)
 end)
 

@@ -10,6 +10,7 @@ Input:
   page keys       switch between Fill and Cross
 ]]
 
+local BoardPlacement = require("piclogic/ui/board_placement")
 local BoardWidget = require("piclogic/ui/board_widget")
 local Game = require("piclogic/game")
 local HeaderBar = require("piclogic/ui/components/header_bar")
@@ -56,21 +57,11 @@ end
 
 function GameScreen:layout(dimen)
     self.dimen = dimen
-    local W, H = dimen.w, dimen.h
-    self.landscape = W > H
-    self.header:layout(0, 0, W)
-    local top = Theme.header_h
-    local pad = Theme.space.l
-    local bar = Theme.toolbar_h
-    local area
-    if self.landscape then
-        self.toolbar = { x = W - bar, y = top, w = bar, h = H - top }
-        area = { x = pad, y = top + pad, w = W - bar - 2 * pad, h = H - top - 2 * pad }
-    else
-        self.toolbar = { x = 0, y = H - bar, w = W, h = bar }
-        area = { x = pad, y = top + pad, w = W - 2 * pad, h = H - top - bar - 2 * pad }
-    end
-    self.board:layout(area)
+    local placement = BoardPlacement.compute(self.game.puzzle, dimen.w, dimen.h)
+    self.landscape = placement.landscape
+    self.toolbar = placement.toolbar
+    self.header:layout(0, 0, dimen.w)
+    self.board:setGeometry(placement.geom)
     self:layoutToolbar()
 end
 
@@ -165,7 +156,7 @@ function GameScreen:history(which)
 end
 
 -- Solved: show the finished grid without crosses for a moment; the app then
--- moves on to the reveal screen.
+-- moves on to the reveal screen, which puts the picture on this same grid.
 function GameScreen:onSolved()
     self.board.show_crosses = false
     local tb = self.toolbar
@@ -173,14 +164,7 @@ function GameScreen:onSolved()
         self.board:paint(bb)
         self:paintToolbar(bb)
     end)
-    -- Where the grid sat, so the reveal can show the picture at this size.
-    local g = self.board.geom
-    self.app:onSolved(self.game, g and {
-        cell = g.cell,
-        y = g.grid_y,
-        screen_w = self.dimen.w,
-        screen_h = self.dimen.h,
-    })
+    self.app:onSolved(self.game)
 end
 
 -- Buttons ---------------------------------------------------------------

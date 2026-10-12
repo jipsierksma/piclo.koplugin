@@ -3,7 +3,8 @@ Pure layout math for the board (no KOReader requires, so it is unit tested).
 
 Picks the largest integer cell size at which the clue gutters plus the grid
 fit in a rectangle, so every grid line lands on a whole pixel, and maps
-between cells and screen pixels.
+between cells and screen pixels. The reveal places its picture on this
+grid too (see board_placement.lua).
 
 Grid boundary k (0..n) sits at pixel grid_x + k * cell. Its line is centered
 on that pixel: hairline inside 5-blocks, regular every 5 cells, strong at
@@ -62,7 +63,14 @@ function Geometry.fit(spec)
         local total_w = rg + spec.gap + spec.cols * cell + 2 * outer
         local total_h = cg + spec.gap + spec.rows * cell + 2 * outer
         if total_w <= rect.w and total_h <= rect.h then
-            local bx = rect.x + math.floor((rect.w - total_w) / 2)
+            -- Horizontally the grid itself is centered as far as the row
+            -- clues allow, so a small board (and its reveal) sits in the
+            -- middle; vertically the whole board is centered.
+            local left = rg + spec.gap + outer
+            local grid_w = spec.cols * cell + outer
+            local gx = rect.x + math.floor((rect.w - spec.cols * cell) / 2)
+            gx = math.max(rect.x + left, math.min(gx, rect.x + rect.w - grid_w))
+            local bx = gx - left
             local by = rect.y + math.floor((rect.h - total_h) / 2)
             return setmetatable({
                 cell = cell,
@@ -73,7 +81,7 @@ function Geometry.fit(spec)
                 gap = spec.gap,
                 measure = m,
                 board = { x = bx, y = by, w = total_w, h = total_h },
-                grid_x = bx + rg + spec.gap + outer,
+                grid_x = gx,
                 grid_y = by + cg + spec.gap + outer,
                 row_gutter = rg,
                 col_gutter = cg,

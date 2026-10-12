@@ -33,6 +33,11 @@ function TextButton:preferredWidth()
     return self.dark.w + 2 * pad
 end
 
+--- Narrowest width that still keeps the text clear of the pill's ends.
+function TextButton:minWidth()
+    return self.dark.w + 2 * Theme.space.s
+end
+
 function TextButton:setRect(x, y, w, h)
     self.rect = { x = x, y = y, w = w, h = h }
 end
