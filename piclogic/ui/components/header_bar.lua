@@ -41,6 +41,7 @@ function HeaderBar:layout(x, y, w)
     end
     self.text_x = self.back.rect.x + t + Theme.space.xs
     self:freeText()
+    if self.title == "" then return end
     self.text = TextWidget:new{
         text = self.title,
         face = Theme.face("title"),
@@ -59,8 +60,10 @@ function HeaderBar:paint(bb)
     bb:paintRect(r.x, r.y, r.w, r.h, Theme.WHITE)
     self.back:paint(bb)
     if self.right then self.right:paint(bb) end
-    local size = self.text:getSize()
-    self.text:paintTo(bb, self.text_x, r.y + math.floor((r.h - size.h) / 2))
+    if self.text then
+        local size = self.text:getSize()
+        self.text:paintTo(bb, self.text_x, r.y + math.floor((r.h - size.h) / 2))
+    end
     bb:paintRect(r.x, r.y + r.h - Theme.line.hair, r.w, Theme.line.hair, Theme.BLACK)
 end
 

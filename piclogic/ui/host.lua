@@ -50,15 +50,22 @@ function Host:init()
     end
 end
 
---- Shows `screen` in the window with a flashing transition.
-function Host:setScreen(screen)
+--[[
+Shows `screen` in the window with a flashing transition; refresh = "full"
+asks for the stronger full flash (used by the reveal).
+]]
+function Host:setScreen(screen, refresh)
     if self.screen and self.screen ~= screen and self.screen.free then
         self.screen:free()
     end
     self.screen = screen
     screen.window = self
     screen:layout(self.dimen)
-    Refresh.transition(self)
+    if refresh == "full" then
+        Refresh.reveal(self)
+    else
+        Refresh.transition(self)
+    end
 end
 
 function Host:paintTo(bb, x, y)
@@ -95,8 +102,10 @@ function Host:onClose()
     return true
 end
 
-function Host:onPageKey()
-    if self.screen and self.screen.onPageKey then self.screen:onPageKey() end
+-- Page-turn keys: forward is true for PgFwd (key.key is e.g. "RPgFwd").
+function Host:onPageKey(_, key)
+    local forward = not (key and key.key and tostring(key.key):find("Back"))
+    if self.screen and self.screen.onPageKey then self.screen:onPageKey(forward) end
     return true
 end
 

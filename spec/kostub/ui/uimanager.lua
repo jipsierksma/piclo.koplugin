@@ -3,10 +3,27 @@
 local Event = require("ui/event")
 local Screen = require("device").screen
 
-local UIManager = { stack = {}, dirty = {}, refreshes = {} }
+local UIManager = { stack = {}, dirty = {}, refreshes = {}, tasks = {} }
 
 function UIManager:reset()
-    self.stack, self.dirty, self.refreshes = {}, {}, {}
+    self.stack, self.dirty, self.refreshes, self.tasks = {}, {}, {}, {}
+end
+
+function UIManager:scheduleIn(seconds, fn)
+    table.insert(self.tasks, { at = seconds, fn = fn })
+end
+
+function UIManager:unschedule(fn)
+    for i = #self.tasks, 1, -1 do
+        if self.tasks[i].fn == fn then table.remove(self.tasks, i) end
+    end
+end
+
+--- Runs every scheduled task (as if their time had come).
+function UIManager:runScheduled()
+    local tasks = self.tasks
+    self.tasks = {}
+    for _, t in ipairs(tasks) do t.fn() end
 end
 
 function UIManager:show(w, mode)

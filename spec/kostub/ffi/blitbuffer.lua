@@ -4,7 +4,18 @@
 local ffi = require("ffi")
 
 local BB = { out_of_bounds = 0 }
-local function Color8(v) return { a = v } end
+
+-- Colors are FFI structs whose __eq indexes the other operand, exactly like
+-- KOReader's (base/ffi/blitbuffer.lua), so comparing a color with nil
+-- crashes here too instead of passing silently.
+ffi.cdef("typedef struct { uint8_t a; } PiclogicStubColor8;")
+local Color8 = ffi.metatype("PiclogicStubColor8", {
+    __index = { getColorRGB32 = function(self) return self end },
+    __eq = function(self, color)
+        local c = color:getColorRGB32()
+        return self.a == c.a
+    end,
+})
 BB.Color8 = Color8
 BB.COLOR_WHITE = Color8(0xFF)
 BB.COLOR_GRAY_E = Color8(0xEE)
@@ -78,6 +89,15 @@ function Buf:paintBorder(x, y, w, h, bw, c)
     self:paintRect(x, y + h - bw, w, bw, c)
     self:paintRect(x, y, bw, h, c)
     self:paintRect(x + w - bw, y, bw, h, c)
+end
+
+function Buf:paintRoundedRect(x, y, w, h, c, r)
+    r = math.min(r or 0, math.floor(h / 2), math.floor(w / 2))
+    for yy = 0, h - 1 do
+        local dy = math.max(0, r - yy - 1, yy - (h - r))
+        local inset = r > 0 and math.floor(r - math.sqrt(math.max(0, r * r - dy * dy))) or 0
+        self:paintRect(x + inset, y + yy, w - 2 * inset, 1, c)
+    end
 end
 
 function Buf:blitFrom(src, dx, dy, ox, oy, w, h)

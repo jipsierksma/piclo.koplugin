@@ -10,11 +10,7 @@ Input:
   page keys       switch between Fill and Cross
 ]]
 
-local TextWidget = require("ui/widget/textwidget")
-local T = require("ffi/util").template
-local _ = require("gettext")
 local BoardWidget = require("piclogic/ui/board_widget")
-local Format = require("piclogic/util/format")
 local Game = require("piclogic/game")
 local HeaderBar = require("piclogic/ui/components/header_bar")
 local IconButton = require("piclogic/ui/components/icon_button")
@@ -54,7 +50,6 @@ end
 function GameScreen:free()
     self.board:free()
     self.header:freeText()
-    if self.caption then self.caption:free() end
 end
 
 -- Layout ----------------------------------------------------------------
@@ -76,7 +71,6 @@ function GameScreen:layout(dimen)
     end
     self.board:layout(area)
     self:layoutToolbar()
-    self:layoutCaption()
 end
 
 -- Spaces the toolbar items evenly along the bar.
@@ -103,21 +97,6 @@ function GameScreen:layoutToolbar()
     end
 end
 
-function GameScreen:layoutCaption()
-    if self.caption then
-        self.caption:free()
-        self.caption = nil
-    end
-    if not self.game.solved then return end
-    local tb = self.toolbar
-    self.caption = TextWidget:new{
-        text = T(_("Solved in %1"), Format.duration(self.game:elapsed())),
-        face = Theme.face("body"),
-        fgcolor = Theme.SECONDARY,
-        max_width = math.max(1, (self.landscape and self.header.rect.w or tb.w) - 2 * Theme.space.l),
-    }
-end
-
 -- Painting --------------------------------------------------------------
 
 function GameScreen:paintToolbar(bb)
@@ -128,28 +107,10 @@ function GameScreen:paintToolbar(bb)
     else
         bb:paintRect(tb.x, tb.y, tb.w, Theme.line.hair, Theme.BLACK)
     end
-    if self.game.solved then
-        self:paintCaption(bb)
-        return
-    end
+    if self.game.solved then return end
     self.tools:paint(bb)
     self.undo_btn:paint(bb)
     self.redo_btn:paint(bb)
-end
-
--- In landscape the rail is too narrow for text, so the caption goes under
--- the header instead.
-function GameScreen:paintCaption(bb)
-    local size = self.caption:getSize()
-    if self.landscape then
-        local hr = self.header.rect
-        self.caption:paintTo(bb, hr.w - Theme.toolbar_h - size.w - Theme.space.l,
-            hr.y + math.floor((hr.h - size.h) / 2))
-    else
-        local tb = self.toolbar
-        self.caption:paintTo(bb, tb.x + math.floor((tb.w - size.w) / 2),
-            tb.y + math.floor((tb.h - size.h) / 2))
-    end
 end
 
 function GameScreen:paint(bb)
@@ -202,14 +163,16 @@ function GameScreen:history(which)
     self:apply(self.game[which](self.game))
 end
 
--- Solved: the board shows the bare picture and the toolbar the time, with a
--- full flash to clear any ghosting from play.
+-- Solved: show the finished grid without crosses for a moment; the app then
+-- moves on to the reveal screen.
 function GameScreen:onSolved()
     self.board.show_crosses = false
-    self.header:setTitle(self.game.puzzle.title)
-    self:layoutCaption()
+    local tb = self.toolbar
+    Refresh.regions(self.window, "ui", { self.board:boardRect(), tb }, function(bb)
+        self.board:paint(bb)
+        self:paintToolbar(bb)
+    end)
     self.app:onSolved(self.game)
-    Refresh.reveal(self.window)
 end
 
 -- Buttons ---------------------------------------------------------------
@@ -233,10 +196,7 @@ function GameScreen:onTap(ges)
     local x, y = ges.pos.x, ges.pos.y
     local btn = self.header:buttonAt(x, y)
     if btn then return self:press(btn) end
-    if self.game.solved then
-        if self.board:hit(x, y) then self.app:nextPuzzle(self.game.puzzle) end
-        return
-    end
+    if self.game.solved then return end
     if self.tools:contains(x, y) then
         local k = self.tools:segmentAt(x, y)
         if k then self:selectTool(self.tools.items[k].id) end
