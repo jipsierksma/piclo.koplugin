@@ -20,11 +20,13 @@ local function deepEqual(a, b)
     return true
 end
 
-local function show(v)
+local function show(v, depth)
+    depth = depth or 0
     if type(v) ~= "table" then return tostring(v) end
+    if depth > 2 then return "{...}" end
     local parts = {}
     for k, x in pairs(v) do
-        parts[#parts + 1] = tostring(k) .. "=" .. show(x)
+        parts[#parts + 1] = tostring(k) .. "=" .. show(x, depth + 1)
     end
     table.sort(parts)
     return "{" .. table.concat(parts, ", ") .. "}"
