@@ -56,7 +56,6 @@ function Theme.update()
     Theme.min_cell = s(28)
     Theme.max_cell = s(72)
     Theme.row_h = s(84)
-    Theme.card_h = s(120)
     Theme.min_tile = s(96)
     Theme.mark = s(8)
     -- scaleBySize is a ceil'd multiply; this ratio lets faceForPx undo it.

@@ -1,7 +1,15 @@
 --[[
-Home screen: the wordmark, a Continue card for the puzzle in progress, the
-pack list with progress and lock state, and a footer with "How to play",
-"Settings" and the version.
+Title screen: the logo, a card for the puzzle to go on with, and rows for
+Packs, How to play and Settings.
+
+The card shows a large thumbnail beside the puzzle's name and a black pill
+(see Collection:spotlight):
+  continue   the board so far, "In the Woods · 5", "15×15 · 4:12", Continue
+  play       an empty numbered tile, "First Steps · 1", "5×5 · New", Play
+  done       the latest solved picture, a closing line, Packs
+
+Portrait stacks logo, card and rows; landscape puts logo and card on the
+left and the rows on the right.
 ]]
 
 local IconWidget = require("ui/widget/iconwidget")
@@ -11,6 +19,7 @@ local Format = require("piclo/util/format")
 local HeaderBar = require("piclo/ui/components/header_bar")
 local Icons = require("piclo/ui/icons")
 local Label = require("piclo/ui/components/label")
+local ListRow = require("piclo/ui/components/list_row")
 local Picture = require("piclo/ui/picture")
 local Refresh = require("piclo/ui/refresh")
 local TextButton = require("piclo/ui/components/text_button")
@@ -19,34 +28,46 @@ local Theme = require("piclo/ui/theme")
 local HomeScreen = {}
 HomeScreen.__index = HomeScreen
 
-local function sizeText(puzzle)
-    return T(_("%1×%2"), puzzle.w, puzzle.h)
-end
+-- Logo height as a share of the screen height, and thumbnail width as a
+-- share of the column it sits in.
+local LOGO_SHARE = 0.1
+local THUMB_SHARE = 0.42
 
 function HomeScreen.new(opts)
     local app = opts.app
-    local self = setmetatable({ app = app, labels = {} }, HomeScreen)
-    -- The wordmark carries the name, so the header shows only the back button.
+    local self = setmetatable({ app = app, labels = {}, rows = {} }, HomeScreen)
+    -- The logo carries the name, so the header shows only the back button.
     self.header = HeaderBar.new{ title = "", on_back = function() app:back() end }
-    self.help_btn = TextButton.new{ text = _("How to play"), on_tap = function() app:showHelp() end }
-    self.settings_btn = TextButton.new{ text = _("Settings"), on_tap = function() app:showSettings() end }
-    self.footer = { self.help_btn, self.settings_btn }
+    self.spot = app:collection():spotlight()
+    local spot = self.spot
+    local pill = { continue = _("Continue"), play = _("Play"), done = _("Packs") }
+    self.primary = TextButton.new{ text = pill[spot.kind], primary = true, on_tap = function()
+        if spot.kind == "done" then return app:showPacks() end
+        app:openPuzzle(spot.puzzle)
+    end }
+    self.menu = {
+        { key = "packs_row", title = _("Packs"), on_tap = function() app:showPacks() end },
+        { key = "help_row", title = _("How to play"), on_tap = function() app:showHelp() end },
+        { key = "settings_row", title = _("Settings"), on_tap = function() app:showSettings() end },
+    }
     return self
 end
 
-function HomeScreen:freeWordmark()
-    if self.wordmark then
-        self.wordmark.widget:free()
-        self.wordmark = nil
+function HomeScreen:freeLayout()
+    if self.logo then
+        self.logo.widget:free()
+        self.logo = nil
     end
+    Label.freeAll(self.labels)
+    self.labels = {}
+    for __, row in ipairs(self.rows) do row:free() end
+    self.rows = {}
 end
 
 function HomeScreen:free()
-    self:freeWordmark()
+    self:freeLayout()
     self.header:freeText()
-    for __, b in ipairs(self.footer) do b:free() end
-    Label.freeAll(self.labels)
-    self.labels = {}
+    self.primary:free()
 end
 
 function HomeScreen:label(opts)
@@ -55,181 +76,181 @@ function HomeScreen:label(opts)
     return l
 end
 
-function HomeScreen:layoutCard(y, W)
-    local cont = self.app:collection():continueTarget()
-    self.card = nil
-    if not cont then return y end
-    local m, h = Theme.space.xl, Theme.card_h
-    local thumb = h - 2 * Theme.space.m
-    local text_x = m + thumb + Theme.space.l
-    local text_w = W - text_x - m - Theme.touch
-    self.card = {
-        rect = { x = 0, y = y, w = W, h = h },
-        thumb = { x = m, y = y + Theme.space.m, w = thumb, h = thumb },
-        cont = cont,
-        text_x = text_x,
-        kicker = self:label{ text = _("Continue"), size = "caption", color = Theme.SECONDARY, max_width = text_w },
-        title = self:label{ text = T(_("%1 · %2"), cont.pack.title, cont.puzzle.number), role = "title",
-            max_width = text_w },
-        sub = self:label{ text = T(_("%1 · %2"), sizeText(cont.puzzle), Format.duration(cont.elapsed)),
-            color = Theme.SECONDARY, max_width = text_w },
-    }
-    return y + h
+local function sizeText(puzzle)
+    return T(_("%1×%2"), puzzle.w, puzzle.h)
 end
 
-function HomeScreen:layoutRows(y, W)
-    local m = Theme.space.xl
-    local text_w = W - 2 * m - Theme.touch
-    self.rows = {}
-    for __, pack in ipairs(self.app:catalog().packs) do
-        local info = self.app:collection():packInfo(pack)
-        local sub
-        if info.unlocked then
-            sub = T(_("%1 · %2 of %3 solved"), sizeText(pack.puzzles[1]), info.solved, info.total)
-        else
-            sub = T(_("Solve %1 in %2 to unlock"), info.rule.count, info.rule.after_title)
-        end
-        self.rows[#self.rows + 1] = {
-            rect = { x = 0, y = y, w = W, h = Theme.row_h },
-            pack = pack,
-            info = info,
-            text_w = text_w,
-            title = self:label{ text = pack.title, role = "title", max_width = text_w,
-                color = info.unlocked and Theme.BLACK or Theme.SECONDARY },
-            sub = self:label{ text = sub, color = Theme.SECONDARY, max_width = text_w },
-        }
-        y = y + Theme.row_h
+-- The card's two lines of text for the spotlight.
+function HomeScreen:cardText()
+    local spot = self.spot
+    if spot.kind == "done" then
+        return _("Every picture found"), _("Play them again from Packs")
     end
-    return y
+    local p = spot.puzzle
+    -- e.g. "In the Woods · 5"
+    local title = T(_("%1 · %2"), self.app:catalog():pack(p.pack_id).title, p.number)
+    if spot.kind == "continue" then
+        return title, T(_("%1 · %2"), sizeText(p), Format.duration(spot.elapsed))
+    end
+    return title, T(_("%1 · New"), sizeText(p))
+end
+
+--- The logo scaled to fit max_w x max_h, or nil when that leaves it too small.
+function HomeScreen:makeLogo(max_w, max_h)
+    local aspect = Icons.aspect("logo")
+    if not aspect then return nil end
+    local h = math.min(math.floor(max_w / aspect), max_h)
+    if h < Theme.touch then return nil end
+    local w = math.floor(h * aspect)
+    self.logo = { w = w, h = h, widget = IconWidget:new{ file = Icons.path("logo"), width = w, height = h } }
+    return self.logo
 end
 
 --[[
-Sizes the wordmark to the room the rest of the screen leaves, up to the full
-content width (or 60% of a landscape screen). Too little room: no wordmark.
+Lays the card out at (x, y) in a column w wide with a thumb x thumb
+thumbnail; the text and pill sit beside it, centered on it.
 ]]
-function HomeScreen:layoutWordmark(y, W, H)
-    self:freeWordmark()
-    local aspect = Icons.aspect("wordmark")
-    if not aspect then return y end
-    local m = Theme.space.xl
-    local below = (self.app:collection():continueTarget() and Theme.card_h or 0) + 2 * Theme.space.l
-        + Theme.touch + #self.app:catalog().packs * Theme.row_h + Theme.touch + Theme.space.s
-    local max_w = W > H and math.floor(W * 0.6) or W - 2 * m
-    local h = math.min(math.floor(max_w / aspect), H - y - below - 2 * Theme.space.l)
-    if h < Theme.touch then return y end
-    local w = math.floor(h * aspect)
-    self.wordmark = {
-        x = math.floor((W - w) / 2),
-        y = y + Theme.space.l,
-        widget = IconWidget:new{ file = Icons.path("wordmark"), width = w, height = h },
-    }
-    return y + h + 2 * Theme.space.l
+function HomeScreen:layoutCard(x, y, w, thumb)
+    self.thumb = { x = x, y = y, w = thumb, h = thumb }
+    local text_x = x + thumb + Theme.space.xl
+    local text_w = x + w - text_x
+    local title, sub = self:cardText()
+    self.card_title = self:label{ text = title, role = "title", max_width = text_w }
+    self.card_sub = self:label{ text = sub, color = Theme.SECONDARY, max_width = text_w }
+    if self.spot.kind == "play" then
+        self.number = self:label{ text = tostring(self.spot.puzzle.number), role = "title", size = "display",
+            color = Theme.SECONDARY }
+    end
+    local t = Theme.touch
+    local block = self.card_title.h + self.card_sub.h + Theme.space.l + t
+    local ty = y + math.floor((thumb - block) / 2)
+    self.card_text = { x = text_x, y = ty }
+    local pw = math.min(text_w, math.max(self.primary:preferredWidth(), t * 4))
+    self.primary:setRect(text_x, ty + self.card_title.h + self.card_sub.h + Theme.space.l, pw, t)
+end
+
+--- One row per menu entry, from y down, across [x, x + w); also self.packs_row etc.
+function HomeScreen:layoutRows(x, y, w)
+    local solved, total = self.app:collection():totals()
+    for k, item in ipairs(self.menu) do
+        local row = ListRow.new{
+            rect = { x = x, y = y + (k - 1) * Theme.row_h, w = w, h = Theme.row_h },
+            title = item.title,
+            sub = k == 1 and T(_("%1 of %2 solved"), solved, total) or nil,
+        }
+        row.on_tap = item.on_tap
+        self.rows[k] = row
+        self[item.key] = row
+    end
+    self.rows_top = { x = x, y = y, w = w }
+end
+
+-- Thumbnail size for a column w wide, given the height left for it.
+local function thumbSize(w, room)
+    return math.min(math.floor(w * THUMB_SHARE), room)
+end
+
+--[[
+Places the logo (if any) and returns the card's y: the free height between
+the header and the screen's bottom edge is split evenly above the logo,
+between logo and card, and below `below` (the height from the card's top
+down that the rest takes).
+]]
+local function stack(logo, x, H, below)
+    local top = Theme.header_h
+    local free = H - top - below - (logo and logo.h or 0)
+    if not logo then return top + math.floor(free / 2) end
+    local space = math.floor(free / 3)
+    logo.x, logo.y = x, top + space
+    return logo.y + logo.h + space
+end
+
+function HomeScreen:layoutPortrait(top, bottom, W, H)
+    local m, gap = Theme.space.xl, Theme.space.xxl
+    local w = W - 2 * m
+    local rows_h = #self.menu * Theme.row_h
+    local logo = self:makeLogo(w, math.floor((bottom - top) * LOGO_SHARE))
+    local logo_h = logo and logo.h + gap or 0
+    local thumb = thumbSize(w, bottom - top - rows_h - gap - logo_h)
+    if thumb < 2 * Theme.touch and logo then
+        -- Too low for everything: the card matters more than the logo.
+        self:freeLayout()
+        logo = nil
+        thumb = thumbSize(w, bottom - top - rows_h - gap)
+    end
+    local y = stack(logo, logo and math.floor((W - logo.w) / 2), H, thumb + gap + rows_h)
+    self:layoutCard(m, y, w, thumb)
+    self:layoutRows(0, y + thumb + gap, W)
+end
+
+function HomeScreen:layoutLandscape(top, bottom, W, H)
+    local m, gap = Theme.space.xl, Theme.space.xxl
+    local half = math.floor(W / 2)
+    local w = half - 2 * m
+    local logo = self:makeLogo(w, math.floor((bottom - top) * LOGO_SHARE * 1.4))
+    local logo_h = logo and logo.h + gap or 0
+    local thumb = thumbSize(w, bottom - top - logo_h)
+    local y = stack(logo, logo and m + math.floor((w - logo.w) / 2), H, thumb)
+    self:layoutCard(m, y, w, thumb)
+    local rows_h = #self.menu * Theme.row_h
+    self:layoutRows(half, top + math.floor((bottom - top - rows_h) / 2), W - half)
 end
 
 function HomeScreen:layout(dimen)
-    Label.freeAll(self.labels)
-    self.labels = {}
+    self:freeLayout()
     local W, H = dimen.w, dimen.h
-    local m = Theme.space.xl
-    self.W = W
     self.header:layout(0, 0, W)
-    local y = self:layoutWordmark(Theme.header_h, W, H)
-    y = self:layoutCard(y + Theme.space.s, W)
-    self.section = self:label{ text = _("Packs"), size = "caption", color = Theme.SECONDARY }
-    self.section_y = y + Theme.space.l
-    self:layoutRows(self.section_y + self.section.h + Theme.space.xs, W)
-
-    -- Quiet buttons pad their text, so pull the first one left to align the text.
-    local t = Theme.touch
-    local x = m - Theme.space.l
-    for __, b in ipairs(self.footer) do
-        b:setRect(x, H - t - Theme.space.s, b:preferredWidth(), t)
-        x = x + b.rect.w
+    local top, bottom = Theme.header_h + Theme.space.l, H - Theme.space.l
+    if W > H then
+        self:layoutLandscape(top, bottom, W, H)
+    else
+        self:layoutPortrait(top, bottom, W, H)
     end
-    self.version = self:label{ text = self.app.version or "", size = "caption", color = Theme.SECONDARY }
 end
 
-function HomeScreen:paintCard(bb)
-    local card = self.card
-    if not card then return end
-    local th, r = card.thumb, card.rect
-    bb:paintBorder(th.x, th.y, th.w, th.h, Theme.line.hair, Theme.BLACK)
-    local g = Theme.space.s
-    Picture.paint(bb, card.cont.puzzle, { x = th.x + g, y = th.y + g, w = th.w - 2 * g, h = th.h - 2 * g },
-        { cells = card.cont.cells })
-    local block = card.kicker.h + card.title.h + card.sub.h
-    local y = r.y + math.floor((r.h - block) / 2)
-    card.kicker:paint(bb, card.text_x, y)
-    card.title:paint(bb, card.text_x, y + card.kicker.h)
-    card.sub:paint(bb, card.text_x, y + card.kicker.h + card.title.h)
-    Icons.paint(bb, "chevron", Theme.icon, "normal",
-        { x = r.w - Theme.space.xl - Theme.touch, y = r.y, w = Theme.touch, h = r.h })
-    bb:paintRect(Theme.space.xl, r.y + r.h - 1, r.w - 2 * Theme.space.xl, Theme.line.hair, Theme.BLACK)
-end
-
-function HomeScreen:paintRow(bb, row)
-    local r, m = row.rect, Theme.space.xl
-    local bar_h = Theme.line.strong
-    local block = row.title.h + row.sub.h + (row.info.unlocked and (Theme.space.s + bar_h) or 0)
-    local y = r.y + math.floor((r.h - block) / 2)
-    row.title:paint(bb, m, y)
-    row.sub:paint(bb, m, y + row.title.h)
-    if row.info.unlocked then
-        local by = y + row.title.h + row.sub.h + Theme.space.s
-        local bw = math.floor(row.text_w * 0.6)
-        bb:paintRect(m, by, bw, bar_h, Theme.TINT)
-        if row.info.total > 0 then
-            bb:paintRect(m, by, math.floor(bw * row.info.solved / row.info.total), bar_h, Theme.BLACK)
-        end
+function HomeScreen:paintThumb(bb)
+    local th, spot = self.thumb, self.spot
+    bb:paintBorder(th.x, th.y, th.w, th.h, Theme.line.regular, Theme.BLACK)
+    local g = Theme.space.m
+    local inner = { x = th.x + g, y = th.y + g, w = th.w - 2 * g, h = th.h - 2 * g }
+    if spot.kind == "continue" then
+        Picture.paint(bb, spot.puzzle, inner, { cells = spot.cells })
+    elseif spot.kind == "play" then
+        self.number:paintIn(bb, th, "center")
+    elseif spot.puzzle then
+        Picture.paint(bb, spot.puzzle, inner)
     end
-    Icons.paint(bb, row.info.unlocked and "chevron" or "lock", Theme.icon,
-        row.info.unlocked and "normal" or "disabled",
-        { x = r.w - m - Theme.touch, y = r.y, w = Theme.touch, h = r.h })
-    bb:paintRect(m, r.y + r.h - 1, r.w - 2 * m, Theme.line.hair, Theme.BLACK)
 end
 
 function HomeScreen:paint(bb)
     self.header:paint(bb)
-    if self.wordmark then self.wordmark.widget:paintTo(bb, self.wordmark.x, self.wordmark.y) end
-    self:paintCard(bb)
-    self.section:paint(bb, Theme.space.xl, self.section_y)
-    for __, row in ipairs(self.rows) do self:paintRow(bb, row) end
-    for __, b in ipairs(self.footer) do b:paint(bb) end
-    local hb = self.help_btn.rect
-    self.version:paintIn(bb, { x = 0, y = hb.y, w = self.W - Theme.space.xl, h = hb.h }, "right")
+    if self.logo then self.logo.widget:paintTo(bb, self.logo.x, self.logo.y) end
+    self:paintThumb(bb)
+    local ct = self.card_text
+    self.card_title:paint(bb, ct.x, ct.y)
+    self.card_sub:paint(bb, ct.x, ct.y + self.card_title.h)
+    self.primary:paint(bb)
+    local rt, m = self.rows_top, Theme.space.xl
+    bb:paintRect(rt.x + m, rt.y, rt.w - 2 * m, Theme.line.hair, Theme.BLACK)
+    for __, row in ipairs(self.rows) do row:paint(bb) end
 end
 
 local function inside(rect, x, y)
     return x >= rect.x and x < rect.x + rect.w and y >= rect.y and y < rect.y + rect.h
 end
 
--- Inverts a tapped area for one fast refresh, then runs the action.
-function HomeScreen:pressRect(rect, action)
-    Refresh.press(self.window, rect, function(bb) bb:invertRect(rect.x, rect.y, rect.w, rect.h) end)
-    action()
-end
-
 function HomeScreen:onTap(ges)
     local x, y = ges.pos.x, ges.pos.y
     local btn = self.header:buttonAt(x, y)
+    if not btn and (self.primary:contains(x, y) or inside(self.thumb, x, y)) then btn = self.primary end
     if btn then
         Refresh.press(self.window, btn.rect, function(bb) btn:paint(bb, true) end)
         return btn.on_tap()
     end
-    if self.card and inside(self.card.rect, x, y) then
-        local p = self.card.cont.puzzle
-        return self:pressRect(self.card.rect, function() self.app:openPuzzle(p) end)
-    end
     for __, row in ipairs(self.rows) do
-        if inside(row.rect, x, y) then
-            if not row.info.unlocked then return end
-            return self:pressRect(row.rect, function() self.app:showPack(row.pack.id) end)
-        end
-    end
-    for __, b in ipairs(self.footer) do
-        if b:contains(x, y) then
-            Refresh.press(self.window, b.rect, function(bb) b:paint(bb, true) end)
-            return b.on_tap()
+        if row:contains(x, y) then
+            Refresh.press(self.window, row.rect, function(bb) row:paintPressed(bb) end)
+            return row.on_tap()
         end
     end
 end
