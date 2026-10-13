@@ -38,6 +38,13 @@ function TextButton:minWidth()
     return self.dark.w + 2 * Theme.space.s
 end
 
+--- Blank space at each side when w wide: none for a pill, the padding
+--- around the text for a quiet button (only its text is visible).
+function TextButton:blankSide(w)
+    if self.primary then return 0 end
+    return math.floor((w - self.dark.w) / 2)
+end
+
 function TextButton:setRect(x, y, w, h)
     self.rect = { x = x, y = y, w = w, h = h }
 end

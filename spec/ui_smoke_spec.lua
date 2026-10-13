@@ -257,6 +257,163 @@ describe("reveal placement", function()
         end)
     end
 
+    -- Sets up progress so solving puzzle k of pack `pi` unlocks the next pack
+    -- (the rules: 5 in First Steps, then 8 in Around the House).
+    local function oneShortOfUnlock(pi, k)
+        local cat, pr = app:catalog(), app:progress()
+        local function solveOthers(pack_index, n)
+            local done = 0
+            for i, p in ipairs(cat.packs[pack_index].puzzles) do
+                if done < n and not (pack_index == pi and i == k) then
+                    pr:markSolved(p.id, 10)
+                    done = done + 1
+                end
+            end
+        end
+        if pi == 1 then
+            solveOthers(1, 4)
+        else
+            solveOthers(1, 5)
+            solveOthers(2, 7)
+        end
+    end
+
+    for _, size in ipairs(sizes) do
+        it("keeps a pack-unlocking solve on its grid at " .. size[1] .. "x" .. size[2], function()
+            local misplaced = {}
+            for pi = 1, 2 do
+                for k = 1, #app:catalog().packs[pi].puzzles do
+                    launch(size[1], size[2])
+                    if top() == "help" then app:back() end
+                    oneShortOfUnlock(pi, k)
+                    local p = app:catalog().packs[pi].puzzles[k]
+                    assert.is_true(app:collection():wouldUnlock(p), p.id .. " would unlock")
+                    app:openPuzzle(p)
+                    H.settle()
+                    local screen, game = host.screen, app.game
+                    local grid = gridBox(screen)
+                    solveByTapping(screen, game)
+                    UIManager:runScheduled()
+                    local rv = host.screen
+                    assert.are.equal(1, #rv.data.unlocked)
+                    local box = rv.box
+                    if box.x ~= grid.x or box.y ~= grid.y or box.w ~= grid.w or box.h ~= grid.h then
+                        misplaced[#misplaced + 1] = p.id
+                    end
+                    clean()
+                end
+            end
+            assert.are.same({}, misplaced)
+        end)
+    end
+
+    it("keeps the picture on the grid when the solution is shown on an unlocking board", function()
+        launch()
+        app:back()
+        oneShortOfUnlock(2, 4)
+        local p = app:catalog().packs[2].puzzles[4]
+        app:openPuzzle(p)
+        H.settle()
+        local grid = gridBox(host.screen)
+        app:showSolution()
+        assert.are.same(grid, host.screen.box)
+        assert.are.same({}, host.screen.data.unlocked)
+    end)
+
+    it("puts a long unlock line's pack name on a line of its own", function()
+        launch(1680, 1264)
+        app:back()
+        local p = app:catalog().packs[2].puzzles[4]
+        local long = "A pack with a remarkably long title, far too long for one line"
+        app:push{ name = "reveal", data = { mode = "solved", puzzle = p, elapsed = 10, unlocked = { long } } }
+        local u = host.screen.unlocked
+        assert.are.equal(2, #u)
+        assert.are.equal("New pack unlocked:", u[1].widget.text)
+        assert.is_false(u[1].truncated)
+        assert.is_true(u[2].follows)
+        assert.is_true(u[2].truncated)
+        clean()
+    end)
+
+    it("keeps a short unlock line on one line", function()
+        launch()
+        app:back()
+        local p = app:catalog().packs[2].puzzles[4]
+        app:push{ name = "reveal", data = { mode = "solved", puzzle = p, elapsed = 10, unlocked = { "In the Woods" } } }
+        local u = host.screen.unlocked
+        assert.are.equal(1, #u)
+        assert.are.equal("New pack unlocked: In the Woods", u[1].widget.text)
+    end)
+
+    for _, size in ipairs({ { 1680, 1264 }, { 1448, 1072 } }) do
+        it("titles landscape reveals above the picture at " .. size[1] .. "x" .. size[2], function()
+            local function overlap(a, b)
+                return a.x < b.x + b.w and b.x < a.x + a.w and a.y < b.y + b.h and b.y < a.y + a.h
+            end
+            for pi, pack in ipairs({ 1, 2, 3 }) do
+                for k = 1, #app:catalog().packs[pack].puzzles, 3 do
+                    launch(size[1], size[2])
+                    if top() == "help" then app:back() end
+                    local p = app:catalog().packs[pack].puzzles[k]
+                    app:push{ name = "reveal", data = { mode = "view", puzzle = p, best = 10 } }
+                    local rv = host.screen
+                    local box, t = rv.box, rv.title
+                    local pos
+                    for _, e in ipairs(rv.text_pos) do if e.item == t then pos = e end end
+                    assert.truthy(pos, p.id .. " title placed")
+                    assert.is_true(pos.y + t.h + rv.summary.h <= box.y, p.id .. " title above the picture")
+                    local center = pos.x + t.w / 2
+                    assert.is_true(math.abs(center - (box.x + box.w / 2)) <= 1
+                        or pos.x == Theme.space.xl or pos.x + t.w == size[1] - Theme.space.xl, p.id .. " centered on it")
+                    for _, b in ipairs(rv.buttons) do
+                        assert.is_false(overlap(b.rect, box), p.id .. " button clear of the picture")
+                    end
+                    clean()
+                end
+            end
+        end)
+    end
+
+    it("centers portrait reveal text on the screen, not the picture", function()
+        launch()
+        app:back()
+        -- the 10x10 whose picture sits furthest right of center (wide row clues)
+        local Placement = require("piclo/ui/board_placement")
+        local mid, p, off = Screen.w / 2, nil, 0
+        for _, q in ipairs(app:catalog().packs[2].puzzles) do
+            local b = Placement.pictureBox(Placement.compute(q, Screen.w, Screen.h).geom)
+            if b.x + b.w / 2 - mid > off then p, off = q, b.x + b.w / 2 - mid end
+        end
+        assert.is_true(off > 5, "some 10x10 picture sits right of center")
+        app:push{ name = "reveal", data = { mode = "solved", puzzle = p, elapsed = 10, unlocked = { "In the Woods" },
+            next = app:catalog().packs[2].puzzles[1] } }
+        assert.are.equal(2, #host.screen.buttons)
+        local rv = host.screen
+        for _, e in ipairs(rv.text_pos) do
+            assert.is_true(math.abs(e.x + e.item.w / 2 - mid) <= 1, e.item.widget.text .. " centered on the screen")
+        end
+        -- the visible row: from the quiet button's text to the pill's right edge
+        local quiet, pill = rv.buttons[#rv.buttons], rv.buttons[1]
+        local left = quiet.rect.x + quiet:blankSide(quiet.rect.w)
+        local right = pill.rect.x + pill.rect.w
+        assert.is_true(math.abs((left + right) / 2 - mid) <= 1, "visible button row centered on the screen")
+        clean()
+    end)
+
+    it("leaves boards alone when no unlock is coming", function()
+        launch()
+        app:back()
+        local Placement = require("piclo/ui/board_placement")
+        for _, p in ipairs(app:catalog().packs[2].puzzles) do
+            local a = Placement.compute(p, Screen.w, Screen.h).geom
+            app:openPuzzle(p)
+            H.settle()
+            local g = host.screen.board.geom
+            assert.are.same({ a.grid_x, a.grid_y, a.cell }, { g.grid_x, g.grid_y, g.cell })
+            app:back()
+        end
+    end)
+
     it("draws a collection picture where its board will be", function()
         launch()
         app:back()
