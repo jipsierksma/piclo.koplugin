@@ -1,8 +1,8 @@
-local Board = require("piclogic/model/board")
-local Cell = require("piclogic/model/cell")
-local Grid = require("piclogic/model/grid")
-local History = require("piclogic/model/history")
-local Puzzle = require("piclogic/model/puzzle")
+local Board = require("piclo/model/board")
+local Cell = require("piclo/model/cell")
+local Grid = require("piclo/model/grid")
+local History = require("piclo/model/history")
+local Puzzle = require("piclo/model/puzzle")
 local H = require("helpers")
 
 local FILL, CROSS = Board.TOOL_FILL, Board.TOOL_CROSS

@@ -1,6 +1,6 @@
-local Cell = require("piclogic/model/cell")
-local Progress = require("piclogic/storage/progress")
-local Puzzle = require("piclogic/model/puzzle")
+local Cell = require("piclo/model/cell")
+local Progress = require("piclo/storage/progress")
+local Puzzle = require("piclo/model/puzzle")
 
 -- In-memory stand-in for LuaSettings that remembers what was flushed.
 local function store(data)

@@ -1,7 +1,7 @@
 --[[
-Picture Logic: registers the menu entry and a Dispatcher action (so it can
+Piclo: registers the menu entry and a Dispatcher action (so it can
 be bound to a gesture or launched from a home-screen plugin), and hands off
-to the app controller. Everything else lives under piclogic/. KOReader's
+to the app controller. Everything else lives under piclo/. KOReader's
 plugin loader keeps this directory on package.path after loading
 (frontend/pluginloader.lua), so the namespaced requires resolve later.
 ]]
@@ -10,36 +10,36 @@ local Dispatcher = require("dispatcher")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 
-local PicLogic = WidgetContainer:extend{
-    name = "piclogic",
+local Piclo = WidgetContainer:extend{
+    name = "piclo",
     is_doc_only = false,
 }
 
-function PicLogic:onDispatcherRegisterActions()
-    Dispatcher:registerAction("piclogic_open", {
+function Piclo:onDispatcherRegisterActions()
+    Dispatcher:registerAction("piclo_open", {
         category = "none",
-        event = "PicLogicOpen",
-        title = _("Picture Logic"),
+        event = "PicloOpen",
+        title = _("Piclo"),
         general = true,
     })
 end
 
-function PicLogic:init()
+function Piclo:init()
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
-function PicLogic:addToMainMenu(menu_items)
-    menu_items.piclogic = {
-        text = _("Picture Logic"),
+function Piclo:addToMainMenu(menu_items)
+    menu_items.piclo = {
+        text = _("Piclo"),
         sorting_hint = "tools",
-        callback = function() self:onPicLogicOpen() end,
+        callback = function() self:onPicloOpen() end,
     }
 end
 
-function PicLogic:onPicLogicOpen()
+function Piclo:onPicloOpen()
     if not self.app then
-        local App = require("piclogic/app")
+        local App = require("piclo/app")
         -- version comes from _meta.lua, merged in by the plugin loader
         self.app = App.new{ ui = self.ui, path = self.path, version = self.version }
     end
@@ -47,4 +47,10 @@ function PicLogic:onPicLogicOpen()
     return true
 end
 
-return PicLogic
+-- The file manager or reader we belong to is closing (e.g. Exit, or opening
+-- a book). Close our window too: KOReader only quits once no window is left.
+function Piclo:onCloseWidget()
+    if self.app then self.app:close() end
+end
+
+return Piclo

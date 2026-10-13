@@ -2,7 +2,7 @@
 -- isn't always installed.
 local function luaFiles()
     local list = {}
-    local p = io.popen("find main.lua _meta.lua piclogic -name '*.lua'")
+    local p = io.popen("find main.lua _meta.lua piclo -name '*.lua'")
     for f in p:lines() do list[#list + 1] = f end
     p:close()
     return list

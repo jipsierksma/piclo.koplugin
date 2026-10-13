@@ -1,4 +1,4 @@
-local Layout = require("piclogic/ui/layout")
+local Layout = require("piclo/ui/layout")
 
 describe("fitPicture", function()
     it("uses the largest whole-pixel scale and centers", function()

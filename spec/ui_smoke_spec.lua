@@ -5,13 +5,13 @@ launching, the collection, solving and the reveal, layouts, and play.
 
 local H = require("ui_harness")
 local BB = require("ffi/blitbuffer")
-local Cell = require("piclogic/model/cell")
+local Cell = require("piclo/model/cell")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
-local Game = require("piclogic/game")
+local Game = require("piclo/game")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
-local Theme = require("piclogic/ui/theme")
+local Theme = require("piclo/ui/theme")
 local UIManager = require("ui/uimanager")
 
 local host, app
@@ -31,7 +31,7 @@ local solveByTapping, shot, clean = H.solveByTapping, H.shot, H.clean
 describe("launching", function()
     it("registers one menu entry and a dispatcher action", function()
         launch()
-        assert.is_not_nil(Dispatcher.actions.piclogic_open)
+        assert.is_not_nil(Dispatcher.actions.piclo_open)
         assert.is_true(host.covers_fullscreen)
     end)
 
@@ -72,6 +72,27 @@ describe("launching", function()
         assert.are.equal("home", top())
         tapRect(rows[1].rect)
         assert.are.equal("pack", top())
+    end)
+end)
+
+describe("quitting", function()
+    it("closes its window and saves when the file manager closes", function()
+        local _, screen, game = play(2, 1)
+        tapCell(screen, 1, 1)
+        local id = game.puzzle.id
+        H.plugin:handleEvent(Event:new("CloseWidget"))
+        assert.are.equal(0, #UIManager.stack)
+        assert.is_nil(app.host)
+        assert.is_true(app:progress():inProgress(id))
+        local saved = LuaSettings.files["/settings/piclo.lua"]
+        assert.truthy(saved and saved.puzzles[id])
+    end)
+
+    it("does nothing when its window isn't open", function()
+        launch()
+        app:close()
+        H.plugin:handleEvent(Event:new("CloseWidget"))
+        assert.are.equal(0, #UIManager.stack)
     end)
 end)
 
@@ -128,12 +149,12 @@ describe("collection", function()
 
     it("debounces saves during play and flushes on suspend", function()
         local _, screen = play(1, 1)
-        local before = LuaSettings.files["/settings/piclogic.lua"]
+        local before = LuaSettings.files["/settings/piclo.lua"]
         tapCell(screen, 1, 1)
-        assert.are.equal(before, LuaSettings.files["/settings/piclogic.lua"])
+        assert.are.equal(before, LuaSettings.files["/settings/piclo.lua"])
         assert.are.equal(1, #UIManager.tasks)
         host:handleEvent(Event:new("Suspend"))
-        local saved = LuaSettings.files["/settings/piclogic.lua"]
+        local saved = LuaSettings.files["/settings/piclo.lua"]
         assert.is_not_nil(saved.puzzles[app.game.puzzle.id].state)
         assert.are.equal(0, #UIManager.tasks)
     end)
@@ -386,18 +407,18 @@ end)
 
 describe("icons", function()
     it("has a file for every icon the UI names", function()
-        local files = { "piclogic/ui/screens/game.lua", "piclogic/ui/screens/home.lua",
-            "piclogic/ui/components/header_bar.lua" }
+        local files = { "piclo/ui/screens/game.lua", "piclo/ui/screens/home.lua",
+            "piclo/ui/components/header_bar.lua" }
         for _, file in ipairs(files) do
             local src = io.open(file):read("*a")
             for name in src:gmatch('icon = "([%w_]+)"') do
-                assert(io.open("piclogic/icons/" .. name .. ".svg"), "missing icon " .. name)
+                assert(io.open("piclo/icons/" .. name .. ".svg"), "missing icon " .. name)
             end
             for name in src:gmatch('Icons%.path%("([%w_]+)"') do
-                assert(io.open("piclogic/icons/" .. name .. ".svg"), "missing icon " .. name)
+                assert(io.open("piclo/icons/" .. name .. ".svg"), "missing icon " .. name)
             end
             for name in src:gmatch('Icons%.paint%(bb, "([%w_]+)"') do
-                assert(io.open("piclogic/icons/" .. name .. ".svg"), "missing icon " .. name)
+                assert(io.open("piclo/icons/" .. name .. ".svg"), "missing icon " .. name)
             end
         end
     end)

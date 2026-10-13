@@ -1,4 +1,4 @@
-local Catalog = require("piclogic/data/catalog")
+local Catalog = require("piclo/data/catalog")
 
 local function hasProblem(catalog, needle)
     for _, msg in ipairs(catalog.problems) do
@@ -95,7 +95,7 @@ end)
 
 describe("shipped packs", function()
     it("load without problems", function()
-        local catalog = Catalog.load("piclogic/data/packs")
+        local catalog = Catalog.load("piclo/data/packs")
         assert.are.same({}, catalog.problems)
         assert.are.equal(3, #catalog.packs)
     end)

@@ -1,6 +1,6 @@
 local _ = require("gettext")
 return {
-    fullname = _("Picture Logic"),
+    fullname = _("Piclo"),
     description = _([[Picture logic puzzles (nonograms) that reveal hand-drawn pictures as you solve them.]]),
-    version = "0.5.0",
+    version = "0.5.1",
 }

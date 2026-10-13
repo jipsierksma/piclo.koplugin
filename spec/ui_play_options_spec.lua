@@ -5,10 +5,10 @@ the header timer, the hold action and the landscape rail side.
 ]]
 
 local H = require("ui_harness")
-local Cell = require("piclogic/model/cell")
+local Cell = require("piclo/model/cell")
 local Event = require("ui/event")
-local Game = require("piclogic/game")
-local Theme = require("piclogic/ui/theme")
+local Game = require("piclo/game")
+local Theme = require("piclo/ui/theme")
 local UIManager = require("ui/uimanager")
 
 local gesture, tapRect, tapCell, cellPoint = H.gesture, H.tapRect, H.tapCell, H.cellPoint

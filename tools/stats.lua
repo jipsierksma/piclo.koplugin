@@ -8,10 +8,10 @@ puzzle that is easier than the one before it.
 
 dofile("tools/koreader_stubs.lua")
 
-local Catalog = require("piclogic/data/catalog")
+local Catalog = require("piclo/data/catalog")
 local Difficulty = require("tools/difficulty")
 
-local catalog = Catalog.load("piclogic/data/packs")
+local catalog = Catalog.load("piclo/data/packs")
 
 for _, pack in ipairs(catalog.packs) do
     io.write(string.format("\n%s (%s)\n", pack.title, pack.id))

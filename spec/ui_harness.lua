@@ -1,10 +1,11 @@
 --[[
 Harness for the headless UI specs: runs the real plugin against the
 stand-ins in spec/kostub/, launched through main.lua's menu entry and
-driven with synthetic gestures. Set PICLOGIC_SHOTS=<dir> to also write PGM
+driven with synthetic gestures. Set PICLO_SHOTS=<dir> to also write PGM
 screenshots for eyeballing layouts.
 
-H.host and H.app are the window and app of the latest launch.
+H.host, H.app and H.plugin are the window, app and plugin instance of the
+latest launch.
 ]]
 
 package.path = "./spec/kostub/?.lua;" .. package.path
@@ -25,15 +26,15 @@ logger.warn = function(...)
 end
 
 local BB = require("ffi/blitbuffer")
-local Cell = require("piclogic/model/cell")
+local Cell = require("piclo/model/cell")
 local Geom = require("ui/geometry")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
-local Theme = require("piclogic/ui/theme")
+local Theme = require("piclo/ui/theme")
 local UIManager = require("ui/uimanager")
 
-local SHOTS = os.getenv("PICLOGIC_SHOTS")
-local PicLogic = dofile("main.lua")
+local SHOTS = os.getenv("PICLO_SHOTS")
+local Piclo = dofile("main.lua")
 
 function H.setScreen(w, h)
     Screen.w, Screen.h, Screen.rotation = w, h, 0
@@ -54,12 +55,12 @@ function H.launch(w, h, keep_disk)
     H.warnings = {}
     if not keep_disk then LuaSettings.files = {} end
     local menu = {}
-    local plugin = PicLogic:new{ ui = { menu = { registerToMainMenu = function() end } }, path = ".",
+    local plugin = Piclo:new{ ui = { menu = { registerToMainMenu = function() end } }, path = ".",
         version = "0.4.0" }
     plugin:addToMainMenu(menu)
-    menu.piclogic.callback()
+    menu.piclo.callback()
     H.settle()
-    H.host, H.app = UIManager.stack[1], plugin.app
+    H.host, H.app, H.plugin = UIManager.stack[1], plugin.app, plugin
     return H.host, H.app
 end
 

@@ -4,7 +4,7 @@ more solver sweeps are harder; at equal sweeps, the less the first sweep
 decides, the harder. Larger score = harder.
 ]]
 
-local Solver = require("piclogic/model/solver")
+local Solver = require("piclo/model/solver")
 
 local Difficulty = {}
 

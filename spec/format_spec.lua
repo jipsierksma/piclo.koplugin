@@ -1,4 +1,4 @@
-local Format = require("piclogic/util/format")
+local Format = require("piclo/util/format")
 
 describe("duration", function()
     it("formats minutes and seconds", function()

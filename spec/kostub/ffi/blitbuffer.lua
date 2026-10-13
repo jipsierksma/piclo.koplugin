@@ -8,8 +8,8 @@ local BB = { out_of_bounds = 0 }
 -- Colors are FFI structs whose __eq indexes the other operand, exactly like
 -- KOReader's (base/ffi/blitbuffer.lua), so comparing a color with nil
 -- crashes here too instead of passing silently.
-ffi.cdef("typedef struct { uint8_t a; } PiclogicStubColor8;")
-local Color8 = ffi.metatype("PiclogicStubColor8", {
+ffi.cdef("typedef struct { uint8_t a; } PicloStubColor8;")
+local Color8 = ffi.metatype("PicloStubColor8", {
     __index = { getColorRGB32 = function(self) return self end },
     __eq = function(self, color)
         local c = color:getColorRGB32()
