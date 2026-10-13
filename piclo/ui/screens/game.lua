@@ -35,7 +35,8 @@ GameScreen.__index = GameScreen
 --[[
 opts: app, game, title (header text), deghost_every (edits between
 ghost-clearing flashes, nil = never), highlight_done, hold_action
-("opposite" | "cross"), show_timer, rail_side
+("opposite" | "cross"), show_timer, rail_side, unlock_room (solving will
+unlock a pack: leave room for the reveal's extra line)
 ]]
 function GameScreen.new(opts)
     local self = setmetatable({
@@ -46,6 +47,7 @@ function GameScreen.new(opts)
         hold_action = opts.hold_action,
         show_timer = opts.show_timer and not opts.game.solved,
         rail_side = opts.rail_side,
+        unlock_room = opts.unlock_room,
         edits = 0,
     }, GameScreen)
     self.header = HeaderBar.new{
@@ -81,7 +83,8 @@ end
 
 function GameScreen:layout(dimen)
     self.dimen = dimen
-    local placement = BoardPlacement.compute(self.game.puzzle, dimen.w, dimen.h, self.rail_side)
+    local placement = BoardPlacement.compute(self.game.puzzle, dimen.w, dimen.h,
+        { rail_side = self.rail_side, unlock_room = self.unlock_room })
     self.landscape = placement.landscape
     self.header:layout(0, 0, dimen.w)
     self.board:setGeometry(placement.geom)

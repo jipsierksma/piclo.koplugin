@@ -116,6 +116,7 @@ function App:build(route)
             hold_action = self:setting("hold_action"),
             show_timer = self:setting("show_timer"),
             rail_side = self:setting("rail_side"),
+            unlock_room = self:collection():wouldUnlock(p),
         }
     end
     return RevealScreen.new{ app = self, data = route.data, rail_side = self:setting("rail_side") }
@@ -243,6 +244,9 @@ function App:showSolution()
     if not game then return end
     game:pause()
     local progress, p = self:progress(), game.puzzle
+    -- Asked before recording, like the game screen did: the board's room for
+    -- an unlock line has to match the picture's.
+    local unlock_room = self:collection():wouldUnlock(p)
     progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
     progress:markSolved(p.id, game:elapsed(), true)
     self.game = nil
@@ -253,6 +257,7 @@ function App:showSolution()
         revealed = true,
         next = self:collection():nextAfter(p),
         unlocked = {},
+        unlock_room = unlock_room,
     } }, "full")
 end
 
@@ -319,6 +324,7 @@ end
 function App:onSolved(game)
     local progress, p, collection = self:progress(), game.puzzle, self:collection()
     local locked_before = collection:lockedPacks()
+    local unlock_room = collection:wouldUnlock(p)
     progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
     local result = progress:markSolved(p.id, game:elapsed())
     local unlocked = collection:newlyUnlocked(locked_before)
@@ -330,6 +336,7 @@ function App:onSolved(game)
         best = progress:best(p.id),
         result = result,
         next = collection:nextAfter(p),
+        unlock_room = unlock_room,
         unlocked = unlocked,
     }
     self.reveal_task = function()

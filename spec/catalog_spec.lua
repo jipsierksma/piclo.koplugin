@@ -99,4 +99,27 @@ describe("shipped packs", function()
         assert.are.same({}, catalog.problems)
         assert.are.equal(3, #catalog.packs)
     end)
+
+    -- The reveal centers its text on the grid, so a drawing must sit in the
+    -- middle of its grid (empty margins differ by at most one cell).
+    it("center every drawing in its grid", function()
+        local off = {}
+        for _, pack in ipairs(Catalog.load("piclo/data/packs").packs) do
+            for _, p in ipairs(pack.puzzles) do
+                local c1, c2, r1, r2 = p.w, 1, p.h, 1
+                for r = 1, p.h do
+                    for c = 1, p.w do
+                        if p:isFilled(r, c) then
+                            c1, c2 = math.min(c1, c), math.max(c2, c)
+                            r1, r2 = math.min(r1, r), math.max(r2, r)
+                        end
+                    end
+                end
+                if math.abs((c1 - 1) - (p.w - c2)) > 1 or math.abs((r1 - 1) - (p.h - r2)) > 1 then
+                    off[#off + 1] = p.id
+                end
+            end
+        end
+        assert.are.same({}, off)
+    end)
 end)

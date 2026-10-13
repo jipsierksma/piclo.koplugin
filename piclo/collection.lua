@@ -53,6 +53,20 @@ function Collection:lockedPacks()
     return locked
 end
 
+--- True when solving `puzzle` (not solved yet) would unlock a pack.
+function Collection:wouldUnlock(puzzle)
+    if self.progress:isSolved(puzzle.id) then return false end
+    local function solvedAfter(id)
+        return self:solvedIn(id) + (id == puzzle.pack_id and 1 or 0)
+    end
+    for __, pack in ipairs(self.catalog.packs) do
+        if not self:packInfo(pack).unlocked and self.catalog:isUnlocked(pack, solvedAfter) then
+            return true
+        end
+    end
+    return false
+end
+
 --- Titles of the packs that are unlocked now but were in `locked_before`.
 function Collection:newlyUnlocked(locked_before)
     local titles = {}

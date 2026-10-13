@@ -6,9 +6,14 @@ left for the board, and the board geometry fitted into it.
 This is the one place that decides it. The game screen draws the board here
 and the reveal draws the finished picture on the same grid, so the picture
 appears exactly where the board was.
+
+When solving the puzzle will unlock a pack, the reveal shows one more line
+under its buttons. In portrait the board then leaves room for it: it sits
+a little higher, and on some screens a pixel or two smaller per cell.
 ]]
 
 local RenderText = require("ui/rendertext")
+local TextWidget = require("ui/widget/textwidget")
 local logger = require("logger")
 local Geometry = require("piclo/ui/board_geometry")
 local Theme = require("piclo/ui/theme")
@@ -53,16 +58,81 @@ local function slotsFor(cell, ref)
     }
 end
 
+-- Type size of the reveal's "New pack unlocked" line (the reveal uses it too).
+Placement.UNLOCK_SIZE = "caption"
+
+local line_cache = {}
+
+-- Height of the reveal's unlock line.
+local function lineHeight()
+    local h = line_cache[Theme.scale]
+    if not h then
+        local w = TextWidget:new{ text = "Ag", face = Theme.face("body", Placement.UNLOCK_SIZE) }
+        h = w:getSize().h
+        w:free()
+        line_cache[Theme.scale] = h
+    end
+    return h
+end
+
+--[[
+Height the portrait reveal needs under the picture: its row of buttons and
+`lines` extra lines of text, with a margin above and below. The reveal
+checks its layout against this too, so both sides agree.
+]]
+function Placement.revealRoom(lines)
+    return Theme.touch + lines * (Theme.space.s + lineHeight()) + 2 * Theme.space.xl
+end
+
+local function fit(puzzle, area)
+    local ref = refMetrics()
+    return Geometry.fit{
+        cols = puzzle.w, rows = puzzle.h,
+        row_clues = puzzle.row_clues, col_clues = puzzle.col_clues,
+        rect = area,
+        lines = Theme.line,
+        gap = Theme.space.s,
+        measure = function(cell) return slotsFor(cell, ref) end,
+        max_cell = Theme.max_cell,
+    }
+end
+
+local function roomBelow(geom, H)
+    return H - (geom.grid_y + geom.rows * geom.cell)
+end
+
+--[[
+Fits the board with room under it for the reveal plus one extra line: the
+least the area has to give up at the bottom, found by bisection (giving up
+more only moves the board up or shrinks it). Returns nil if no amount works.
+]]
+local function fitWithRoom(puzzle, area, H)
+    local need = Placement.revealRoom(1)
+    local function try(cut)
+        local g = fit(puzzle, { x = area.x, y = area.y, w = area.w, h = area.h - cut })
+        return g and roomBelow(g, H) >= need and g or nil
+    end
+    local lo, hi = 0, math.floor(area.h / 2)
+    if not try(hi) then return nil end
+    while hi - lo > 1 do
+        local mid = math.floor((lo + hi) / 2)
+        if try(mid) then hi = mid else lo = mid end
+    end
+    return try(hi)
+end
+
 --[[
 Returns { landscape, rail_side, toolbar = rect, area = rect, geom } for a
-puzzle on a W x H screen; rail_side ("right" by default, or "left") places
-the landscape toolbar. geom is nil (and a warning logged) when the board
-doesn't fit.
+puzzle on a W x H screen. opts (optional):
+  rail_side    "right" (default) or "left": where the landscape toolbar goes
+  unlock_room  leave room for the reveal's unlock line (portrait only)
+geom is nil (and a warning logged) when the board doesn't fit.
 ]]
-function Placement.compute(puzzle, W, H, rail_side)
+function Placement.compute(puzzle, W, H, opts)
+    opts = opts or {}
     local top, pad, bar = Theme.header_h, Theme.space.l, Theme.toolbar_h
     local landscape = W > H
-    rail_side = rail_side == "left" and "left" or "right"
+    local rail_side = opts.rail_side == "left" and "left" or "right"
     local toolbar, area
     if landscape then
         local left = rail_side == "left"
@@ -72,16 +142,10 @@ function Placement.compute(puzzle, W, H, rail_side)
         toolbar = { x = 0, y = H - bar, w = W, h = bar }
         area = { x = pad, y = top + pad, w = W - 2 * pad, h = H - top - bar - 2 * pad }
     end
-    local ref = refMetrics()
-    local geom = Geometry.fit{
-        cols = puzzle.w, rows = puzzle.h,
-        row_clues = puzzle.row_clues, col_clues = puzzle.col_clues,
-        rect = area,
-        lines = Theme.line,
-        gap = Theme.space.s,
-        measure = function(cell) return slotsFor(cell, ref) end,
-        max_cell = Theme.max_cell,
-    }
+    local geom = fit(puzzle, area)
+    if geom and opts.unlock_room and not landscape and roomBelow(geom, H) < Placement.revealRoom(1) then
+        geom = fitWithRoom(puzzle, area, H) or geom
+    end
     if not geom then
         logger.warn("piclo: board does not fit in", area.w, "x", area.h)
     elseif geom.cell < Theme.min_cell then
