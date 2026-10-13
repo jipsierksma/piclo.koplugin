@@ -66,10 +66,17 @@ function Refresh.cells(window, rects, paint)
     Refresh.regions(window, "ui", rects, paint)
 end
 
---- Press feedback; forces the repaint now so it shows before the action runs.
+--[[
+Press feedback; forces the repaint now so it shows before the action runs,
+then gives the e-ink controller a moment to read the pressed pixels before
+anything paints over them (as KOReader's Button does). Without that pause
+the panel can pick up half pressed, half unpressed pixels: a button drawn
+only halfway.
+]]
 function Refresh.press(window, rect, paint)
     Refresh.region(window, "fast", rect, paint)
     UIManager:forceRePaint()
+    UIManager:yieldToEPDC()
 end
 
 function Refresh.deghost(window, rect)

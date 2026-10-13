@@ -3,10 +3,10 @@
 local Event = require("ui/event")
 local Screen = require("device").screen
 
-local UIManager = { stack = {}, dirty = {}, refreshes = {}, tasks = {} }
+local UIManager = { stack = {}, dirty = {}, refreshes = {}, tasks = {}, yields = 0 }
 
 function UIManager:reset()
-    self.stack, self.dirty, self.refreshes, self.tasks = {}, {}, {}, {}
+    self.stack, self.dirty, self.refreshes, self.tasks, self.yields = {}, {}, {}, {}, 0
 end
 
 function UIManager:scheduleIn(seconds, fn)
@@ -49,6 +49,7 @@ end
 
 function UIManager:getTopmostVisibleWidget() return self.stack[#self.stack] end
 function UIManager:forceRePaint() self:repaint() end
+function UIManager:yieldToEPDC() self.yields = self.yields + 1 end
 
 function UIManager:repaint()
     for _, w in ipairs(self.stack) do
