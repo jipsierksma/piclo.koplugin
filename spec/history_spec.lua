@@ -1,4 +1,4 @@
-local History = require("piclogic/model/history")
+local History = require("piclo/model/history")
 
 describe("history", function()
     it("starts empty", function()

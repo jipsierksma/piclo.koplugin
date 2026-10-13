@@ -1,6 +1,6 @@
-local Catalog = require("piclogic/data/catalog")
-local Collection = require("piclogic/collection")
-local Progress = require("piclogic/storage/progress")
+local Catalog = require("piclo/data/catalog")
+local Collection = require("piclo/collection")
+local Progress = require("piclo/storage/progress")
 
 local function store()
     local s = { data = {} }
@@ -11,7 +11,7 @@ local function store()
 end
 
 -- The shipped packs: starter (8), then house after 5 in starter, then woods.
-local catalog = Catalog.load("piclogic/data/packs")
+local catalog = Catalog.load("piclo/data/packs")
 
 local function fresh()
     local progress = Progress.new(store())

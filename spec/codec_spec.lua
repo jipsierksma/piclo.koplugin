@@ -1,4 +1,4 @@
-local Codec = require("piclogic/model/codec")
+local Codec = require("piclo/model/codec")
 local H = require("helpers")
 
 describe("codec", function()

@@ -1,6 +1,6 @@
-local Cell = require("piclogic/model/cell")
-local Game = require("piclogic/game")
-local Puzzle = require("piclogic/model/puzzle")
+local Cell = require("piclo/model/cell")
+local Game = require("piclo/game")
+local Puzzle = require("piclo/model/puzzle")
 local H = require("helpers")
 
 local P = assert(Puzzle.new({ id = "t", rows = {

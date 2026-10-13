@@ -1,5 +1,5 @@
 -- Shared spec helpers: compact line and board notation.
-local Cell = require("piclogic/model/cell")
+local Cell = require("piclo/model/cell")
 
 local Helpers = {}
 

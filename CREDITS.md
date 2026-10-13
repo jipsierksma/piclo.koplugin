@@ -2,7 +2,7 @@
 
 ## Code
 
-Picture Logic is licensed under the GNU Affero General Public License v3.0,
+Piclo is licensed under the GNU Affero General Public License v3.0,
 see `LICENSE`.
 
 ## Puzzle art

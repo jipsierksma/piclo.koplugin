@@ -1,5 +1,5 @@
-local Cell = require("piclogic/model/cell")
-local Puzzle = require("piclogic/model/puzzle")
+local Cell = require("piclo/model/cell")
+local Puzzle = require("piclo/model/puzzle")
 
 describe("puzzle", function()
     it("derives row and column clues from the rows", function()

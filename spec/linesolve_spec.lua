@@ -1,4 +1,4 @@
-local LineSolve = require("piclogic/model/linesolve")
+local LineSolve = require("piclo/model/linesolve")
 local H = require("helpers")
 
 local function solve(clue, s)
@@ -59,8 +59,8 @@ describe("solve", function()
 end)
 
 describe("solve against brute force", function()
-    local Cell = require("piclogic/model/cell")
-    local Clues = require("piclogic/model/clues")
+    local Cell = require("piclo/model/cell")
+    local Clues = require("piclo/model/clues")
 
     -- Small deterministic LCG so runs are reproducible on any Lua.
     local seed = 12345

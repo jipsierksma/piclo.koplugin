@@ -1,4 +1,4 @@
-local Geometry = require("piclogic/ui/board_geometry")
+local Geometry = require("piclo/ui/board_geometry")
 
 local LINES = { hair = 1, regular = 2, strong = 4 }
 

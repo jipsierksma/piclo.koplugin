@@ -2,8 +2,8 @@
 LUA ?= luajit
 
 # Files that ship in the plugin zip; tools/, spec/, docs/ and dotfiles don't.
-RUNTIME := _meta.lua main.lua piclogic LICENSE CREDITS.md
-DIST := piclogic.koplugin.zip
+RUNTIME := _meta.lua main.lua piclo LICENSE CREDITS.md
+DIST := piclo.koplugin.zip
 
 .PHONY: test validate stats dist clean
 
@@ -18,10 +18,10 @@ stats:
 
 dist: test validate
 	rm -rf build $(DIST)
-	mkdir -p build/piclogic.koplugin
-	cp -R $(RUNTIME) build/piclogic.koplugin/
+	mkdir -p build/piclo.koplugin
+	cp -R $(RUNTIME) build/piclo.koplugin/
 	find build -name '.*' -exec rm -rf {} +
-	cd build && zip -qrX ../$(DIST) piclogic.koplugin
+	cd build && zip -qrX ../$(DIST) piclo.koplugin
 	rm -rf build
 	@unzip -l $(DIST) | tail -1
 

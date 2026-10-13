@@ -1,4 +1,4 @@
-local Clues = require("piclogic/model/clues")
+local Clues = require("piclo/model/clues")
 local H = require("helpers")
 
 local function status(clue, s)

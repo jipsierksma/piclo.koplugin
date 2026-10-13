@@ -10,11 +10,11 @@ reported as warnings.
 
 dofile("tools/koreader_stubs.lua")
 
-local Catalog = require("piclogic/data/catalog")
+local Catalog = require("piclo/data/catalog")
 local Difficulty = require("tools/difficulty")
-local Solver = require("piclogic/model/solver")
+local Solver = require("piclo/model/solver")
 
-local PACK_DIR = "piclogic/data/packs"
+local PACK_DIR = "piclo/data/packs"
 local failures = 0
 
 local function fail(msg)
