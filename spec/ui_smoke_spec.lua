@@ -1,122 +1,32 @@
 --[[
-Headless smoke test of the real plugin UI against the stand-ins in
-spec/kostub/. Launches the app through main.lua's menu entry and drives it
-with synthetic gestures. Set PICLOGIC_SHOTS=<dir> to also write PGM
-screenshots for eyeballing layouts.
+Headless smoke test of the real plugin UI (see spec/ui_harness.lua):
+launching, the collection, solving and the reveal, layouts, and play.
 ]]
 
-package.path = "./spec/kostub/?.lua;" .. package.path
-
-local warnings = {}
-package.loaded["logger"] = {
-    dbg = function() end,
-    info = function() end,
-    warn = function(...)
-        local parts = {}
-        for _, v in ipairs({ ... }) do parts[#parts + 1] = tostring(v) end
-        warnings[#warnings + 1] = table.concat(parts, " ")
-    end,
-    err = function() end,
-}
-
+local H = require("ui_harness")
 local BB = require("ffi/blitbuffer")
 local Cell = require("piclogic/model/cell")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
 local Game = require("piclogic/game")
-local Geom = require("ui/geometry")
 local LuaSettings = require("luasettings")
 local Screen = require("device").screen
 local Theme = require("piclogic/ui/theme")
 local UIManager = require("ui/uimanager")
 
-local SHOTS = os.getenv("PICLOGIC_SHOTS")
-local PicLogic = dofile("main.lua")
 local host, app
-
-local function setScreen(w, h)
-    Screen.w, Screen.h, Screen.rotation = w, h, 0
-    Screen.bb = BB.new(w, h)
-    Theme.update()
-end
-
-local function settle()
-    UIManager:repaint()
-    UIManager:takeRefreshes()
-end
-
---- Starts the plugin as from the menu. keep_disk keeps saved progress.
-local function launch(w, h, keep_disk)
-    setScreen(w or 1264, h or 1680)
-    UIManager:reset()
-    BB.out_of_bounds = 0
-    warnings = {}
-    if not keep_disk then LuaSettings.files = {} end
-    local menu = {}
-    local plugin = PicLogic:new{ ui = { menu = { registerToMainMenu = function() end } }, path = ".",
-        version = "0.4.0" }
-    plugin:addToMainMenu(menu)
-    menu.piclogic.callback()
-    settle()
-    host, app = UIManager.stack[1], plugin.app
+local function launch(...)
+    host, app = H.launch(...)
     return host, app
 end
-
-local function top() return app.stack[#app.stack].name end
-
---- Launches past the first-run help and opens a puzzle directly.
-local function play(pack_index, puzzle_index, w, h)
-    launch(w, h)
-    if top() == "help" then app:back() end
-    app:openPuzzle(app:catalog().packs[pack_index].puzzles[puzzle_index or 1])
-    settle()
-    return host, host.screen, app.game
+local function play(...)
+    local h, screen, game = H.play(...)
+    host, app = H.host, H.app
+    return h, screen, game
 end
-
-local function point(x, y) return Geom:new{ x = x, y = y } end
-
-local function gesture(kind, x, y, extra)
-    local ev = { ges = kind, pos = point(x, y) }
-    for k, v in pairs(extra or {}) do ev[k] = v end
-    host:onGesture(ev)
-end
-
-local function tapRect(rect)
-    gesture("tap", rect.x + math.floor(rect.w / 2), rect.y + math.floor(rect.h / 2))
-end
-
-local function cellPoint(screen, r, c)
-    local g = screen.board.geom
-    return g.grid_x + math.floor((c - 0.5) * g.cell), g.grid_y + math.floor((r - 0.5) * g.cell)
-end
-
-local function tapCell(screen, r, c) gesture("tap", cellPoint(screen, r, c)) end
-
---- The game's grid as a picture box: where the reveal must draw.
-local function gridBox(screen)
-    local g = screen.board.geom
-    return { x = g.grid_x, y = g.grid_y, w = g.cols * g.cell, h = g.rows * g.cell }
-end
-
-local function solveByTapping(screen, game)
-    local p = game.puzzle
-    for r = 1, p.h do
-        for c = 1, p.w do
-            if p:isFilled(r, c) and game:cell(r, c) ~= Cell.FILLED then tapCell(screen, r, c) end
-        end
-    end
-end
-
-local function shot(name)
-    UIManager:repaint()
-    if SHOTS then Screen.bb:writePGM(SHOTS .. "/" .. name .. ".pgm") end
-end
-
-local function clean()
-    UIManager:repaint()
-    assert.are.equal(0, BB.out_of_bounds)
-    assert.are.same({}, warnings)
-end
+local top, point, gesture, tapRect = H.top, H.point, H.gesture, H.tapRect
+local cellPoint, tapCell, gridBox = H.cellPoint, H.tapCell, H.gridBox
+local solveByTapping, shot, clean = H.solveByTapping, H.shot, H.clean
 
 describe("launching", function()
     it("registers one menu entry and a dispatcher action", function()
@@ -388,7 +298,7 @@ describe("playing", function()
         local g = screen.board.geom
         assert.is_true(g.cell >= Theme.min_cell)
         assert.is_true(g.board.y >= Theme.header_h)
-        assert.is_true(g.board.y + g.board.h <= screen.toolbar.y)
+        assert.is_true(g.board.y + g.board.h <= screen.toolbar.rect.y)
         shot("game_15_portrait")
         clean()
     end)
@@ -415,10 +325,10 @@ describe("playing", function()
         gesture("pan", sx + 60, sy + 5, { start_pos = point(sx, sy) })
         gesture("pan_release", cellPoint(screen, 2, 5))
         for c = 1, 5 do assert.are.equal(Cell.FILLED, game:cell(2, c)) end
-        tapRect(screen.undo_btn.rect)
+        tapRect(screen.toolbar.undo_btn.rect)
         for c = 1, 5 do assert.are.equal(Cell.UNKNOWN, game:cell(2, c)) end
-        assert.is_false(screen.undo_btn.enabled)
-        tapRect(screen.redo_btn.rect)
+        assert.is_false(screen.toolbar.undo_btn.enabled)
+        tapRect(screen.toolbar.redo_btn.rect)
         assert.are.equal(Cell.FILLED, game:cell(2, 3))
     end)
 
@@ -447,7 +357,7 @@ describe("playing", function()
 
     it("switches tools with the segmented control and the page keys", function()
         local _, screen, game = play(2, 1)
-        tapRect(screen.tools.segs[2])
+        tapRect(screen.toolbar.tools.segs[2])
         assert.are.equal(Game.TOOL_CROSS, game.tool)
         tapCell(screen, 1, 2)
         assert.are.equal(Cell.CROSSED, game:cell(1, 2))

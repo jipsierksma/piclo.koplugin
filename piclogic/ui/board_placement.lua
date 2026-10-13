@@ -1,7 +1,7 @@
 --[[
 Where the board goes on a screen of a given size: the header, the toolbar
-(bottom in portrait, a rail on the right in landscape), the area left for
-the board, and the board geometry fitted into it.
+(bottom in portrait, a rail on the right or left in landscape), the area
+left for the board, and the board geometry fitted into it.
 
 This is the one place that decides it. The game screen draws the board here
 and the reveal draws the finished picture on the same grid, so the picture
@@ -54,16 +54,20 @@ local function slotsFor(cell, ref)
 end
 
 --[[
-Returns { landscape, toolbar = rect, area = rect, geom } for a puzzle on a
-W x H screen. geom is nil (and a warning logged) when the board doesn't fit.
+Returns { landscape, rail_side, toolbar = rect, area = rect, geom } for a
+puzzle on a W x H screen; rail_side ("right" by default, or "left") places
+the landscape toolbar. geom is nil (and a warning logged) when the board
+doesn't fit.
 ]]
-function Placement.compute(puzzle, W, H)
+function Placement.compute(puzzle, W, H, rail_side)
     local top, pad, bar = Theme.header_h, Theme.space.l, Theme.toolbar_h
     local landscape = W > H
+    rail_side = rail_side == "left" and "left" or "right"
     local toolbar, area
     if landscape then
-        toolbar = { x = W - bar, y = top, w = bar, h = H - top }
-        area = { x = pad, y = top + pad, w = W - bar - 2 * pad, h = H - top - 2 * pad }
+        local left = rail_side == "left"
+        toolbar = { x = left and 0 or W - bar, y = top, w = bar, h = H - top }
+        area = { x = (left and bar or 0) + pad, y = top + pad, w = W - bar - 2 * pad, h = H - top - 2 * pad }
     else
         toolbar = { x = 0, y = H - bar, w = W, h = bar }
         area = { x = pad, y = top + pad, w = W - 2 * pad, h = H - top - bar - 2 * pad }
@@ -83,7 +87,7 @@ function Placement.compute(puzzle, W, H)
     elseif geom.cell < Theme.min_cell then
         logger.info("piclogic: small cells", geom.cell, "px for", puzzle.id)
     end
-    return { landscape = landscape, toolbar = toolbar, area = area, geom = geom }
+    return { landscape = landscape, rail_side = rail_side, toolbar = toolbar, area = area, geom = geom }
 end
 
 --- The grid's cells as a picture box {x, y, w, h}, one cell per pixel.

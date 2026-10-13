@@ -1,7 +1,7 @@
 --[[
 Home screen: the wordmark, a Continue card for the puzzle in progress, the
-pack list with progress and lock state, and a footer with "How to play" and
-the version.
+pack list with progress and lock state, and a footer with "How to play",
+"Settings" and the version.
 ]]
 
 local IconWidget = require("ui/widget/iconwidget")
@@ -29,6 +29,8 @@ function HomeScreen.new(opts)
     -- The wordmark carries the name, so the header shows only the back button.
     self.header = HeaderBar.new{ title = "", on_back = function() app:back() end }
     self.help_btn = TextButton.new{ text = _("How to play"), on_tap = function() app:showHelp() end }
+    self.settings_btn = TextButton.new{ text = _("Settings"), on_tap = function() app:showSettings() end }
+    self.footer = { self.help_btn, self.settings_btn }
     return self
 end
 
@@ -42,7 +44,7 @@ end
 function HomeScreen:free()
     self:freeWordmark()
     self.header:freeText()
-    self.help_btn:free()
+    for __, b in ipairs(self.footer) do b:free() end
     Label.freeAll(self.labels)
     self.labels = {}
 end
@@ -54,7 +56,7 @@ function HomeScreen:label(opts)
 end
 
 function HomeScreen:layoutCard(y, W)
-    local cont = self.app:continueTarget()
+    local cont = self.app:collection():continueTarget()
     self.card = nil
     if not cont then return y end
     local m, h = Theme.space.xl, Theme.card_h
@@ -80,7 +82,7 @@ function HomeScreen:layoutRows(y, W)
     local text_w = W - 2 * m - Theme.touch
     self.rows = {}
     for __, pack in ipairs(self.app:catalog().packs) do
-        local info = self.app:packInfo(pack)
+        local info = self.app:collection():packInfo(pack)
         local sub
         if info.unlocked then
             sub = T(_("%1 · %2 of %3 solved"), sizeText(pack.puzzles[1]), info.solved, info.total)
@@ -110,7 +112,7 @@ function HomeScreen:layoutWordmark(y, W, H)
     local aspect = Icons.aspect("wordmark")
     if not aspect then return y end
     local m = Theme.space.xl
-    local below = (self.app:continueTarget() and Theme.card_h or 0) + 2 * Theme.space.l
+    local below = (self.app:collection():continueTarget() and Theme.card_h or 0) + 2 * Theme.space.l
         + Theme.touch + #self.app:catalog().packs * Theme.row_h + Theme.touch + Theme.space.s
     local max_w = W > H and math.floor(W * 0.6) or W - 2 * m
     local h = math.min(math.floor(max_w / aspect), H - y - below - 2 * Theme.space.l)
@@ -137,8 +139,13 @@ function HomeScreen:layout(dimen)
     self.section_y = y + Theme.space.l
     self:layoutRows(self.section_y + self.section.h + Theme.space.xs, W)
 
+    -- Quiet buttons pad their text, so pull the first one left to align the text.
     local t = Theme.touch
-    self.help_btn:setRect(m - Theme.space.l, H - t - Theme.space.s, self.help_btn:preferredWidth(), t)
+    local x = m - Theme.space.l
+    for __, b in ipairs(self.footer) do
+        b:setRect(x, H - t - Theme.space.s, b:preferredWidth(), t)
+        x = x + b.rect.w
+    end
     self.version = self:label{ text = self.app.version or "", size = "caption", color = Theme.SECONDARY }
 end
 
@@ -187,7 +194,7 @@ function HomeScreen:paint(bb)
     self:paintCard(bb)
     self.section:paint(bb, Theme.space.xl, self.section_y)
     for __, row in ipairs(self.rows) do self:paintRow(bb, row) end
-    self.help_btn:paint(bb)
+    for __, b in ipairs(self.footer) do b:paint(bb) end
     local hb = self.help_btn.rect
     self.version:paintIn(bb, { x = 0, y = hb.y, w = self.W - Theme.space.xl, h = hb.h }, "right")
 end
@@ -219,9 +226,11 @@ function HomeScreen:onTap(ges)
             return self:pressRect(row.rect, function() self.app:showPack(row.pack.id) end)
         end
     end
-    if self.help_btn:contains(x, y) then
-        Refresh.press(self.window, self.help_btn.rect, function(bb) self.help_btn:paint(bb, true) end)
-        self.help_btn.on_tap()
+    for __, b in ipairs(self.footer) do
+        if b:contains(x, y) then
+            Refresh.press(self.window, b.rect, function(bb) b:paint(bb, true) end)
+            return b.on_tap()
+        end
     end
 end
 
