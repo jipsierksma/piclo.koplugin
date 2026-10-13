@@ -3,8 +3,9 @@ Navigation controller: owns the plugin window (ui/host), the catalog, saved
 progress and the game in play. Screens call it to move around; the window
 passes lifecycle events (suspend, close) up to it.
 
-Navigation is a stack of routes ({name = "home" | "help" | "pack" | "game"
-| "reveal" | "settings", ...}); back pops one. Screens are rebuilt from
+Navigation is a stack of routes ({name = "home" | "help" | "packs" | "pack"
+| "game" | "reveal" | "settings", ...}); back pops one, so it runs
+collection -> packs -> title -> close. Screens are rebuilt from
 data and settings each time they show, so a changed setting takes effect as
 soon as its screen is back on top.
 ]]
@@ -19,6 +20,7 @@ local HomeScreen = require("piclo/ui/screens/home")
 local Host = require("piclo/ui/host")
 local Icons = require("piclo/ui/icons")
 local PackScreen = require("piclo/ui/screens/pack")
+local PacksScreen = require("piclo/ui/screens/packs")
 local Progress = require("piclo/storage/progress")
 local RevealScreen = require("piclo/ui/screens/reveal")
 local SettingsScreen = require("piclo/ui/screens/settings")
@@ -99,6 +101,7 @@ function App:build(route)
     if route.name == "home" then return HomeScreen.new{ app = self } end
     if route.name == "help" then return HelpScreen.new{ app = self, first_run = route.first_run } end
     if route.name == "settings" then return SettingsScreen.new{ app = self, cleared = route.cleared } end
+    if route.name == "packs" then return PacksScreen.new{ app = self, page = route.page } end
     if route.name == "pack" then
         return PackScreen.new{ app = self, pack = self:catalog():pack(route.pack_id), page = route.page }
     end
@@ -167,14 +170,18 @@ function App:showSettings()
     self:push{ name = "settings" }
 end
 
+function App:showPacks()
+    self:push{ name = "packs" }
+end
+
 function App:showPack(pack_id)
     self:push{ name = "pack", pack_id = pack_id }
 end
 
---- Pack screens remember their page so back returns to it.
+--- Paged screens remember their page so back returns to it.
 function App:rememberPage(page)
     local top = self.stack[#self.stack]
-    if top and top.name == "pack" then top.page = page end
+    if top then top.page = page end
 end
 
 --- Unsolved puzzles open the board; solved and revealed ones their picture.
@@ -214,7 +221,7 @@ function App:backToCollection(pack_id)
             return self:render()
         end
     end
-    self.stack = { { name = "home" }, { name = "pack", pack_id = pack_id } }
+    self.stack = { { name = "home" }, { name = "packs" }, { name = "pack", pack_id = pack_id } }
     self:render()
 end
 

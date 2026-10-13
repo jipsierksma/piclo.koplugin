@@ -11,7 +11,7 @@ function Collection.new(catalog, progress)
     return setmetatable({ catalog = catalog, progress = progress }, Collection)
 end
 
---- The puzzle to offer on the Continue card, or nil.
+--- The puzzle "Continue" resumes, or nil.
 function Collection:continueTarget()
     local progress = self.progress
     local id = progress.last_puzzle
@@ -23,6 +23,59 @@ function Collection:continueTarget()
         cells = progress:board(p),
         elapsed = progress:elapsed(id),
     }
+end
+
+--- The puzzle "Play" starts: the first one not yet solved or revealed in an unlocked pack, or nil.
+function Collection:playTarget()
+    local progress = self.progress
+    for __, pack in ipairs(self.catalog.packs) do
+        if self:packInfo(pack).unlocked then
+            for _, p in ipairs(pack.puzzles) do
+                if not progress:isSolved(p.id) and not progress:isRevealed(p.id) then return p end
+            end
+        end
+    end
+    return nil
+end
+
+--- The most recently solved puzzle, or nil.
+function Collection:latestSolved()
+    local latest, at
+    for __, pack in ipairs(self.catalog.packs) do
+        for _, p in ipairs(pack.puzzles) do
+            local rec = self.progress:isSolved(p.id) and self.progress:record(p.id)
+            local t = rec and (tonumber(rec.solved_at) or 0)
+            if t and (not at or t >= at) then latest, at = p, t end
+        end
+    end
+    return latest
+end
+
+--[[
+What the title screen puts forward, one of:
+  { kind = "continue", puzzle, cells, elapsed }   the puzzle in progress
+  { kind = "play", puzzle }                       the first one not played yet
+  { kind = "done", puzzle }                       nothing left: the latest solved picture (or nil)
+]]
+function Collection:spotlight()
+    local cont = self:continueTarget()
+    if cont then
+        cont.kind = "continue"
+        return cont
+    end
+    local p = self:playTarget()
+    if p then return { kind = "play", puzzle = p } end
+    return { kind = "done", puzzle = self:latestSolved() }
+end
+
+--- Puzzles solved over all packs, and how many there are.
+function Collection:totals()
+    local solved, total = 0, 0
+    for __, pack in ipairs(self.catalog.packs) do
+        solved = solved + self.progress:solvedCount(pack)
+        total = total + #pack.puzzles
+    end
+    return solved, total
 end
 
 function Collection:solvedIn(pack_id)

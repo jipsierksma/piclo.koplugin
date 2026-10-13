@@ -23,7 +23,7 @@ function Icons.init(plugin_dir)
     Icons.cache = {}
 end
 
---- Full path of an icon file, e.g. Icons.path("wordmark").
+--- Full path of an icon file, e.g. Icons.path("logo").
 function Icons.path(name)
     return (Icons.dir or ".") .. "/" .. name .. ".svg"
 end

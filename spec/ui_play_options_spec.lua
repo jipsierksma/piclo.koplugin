@@ -18,7 +18,7 @@ local shot, clean, top = H.shot, H.clean, H.top
 local function openSettings(w, h)
     H.launch(w, h)
     if top() == "help" then H.app:back() end
-    tapRect(H.host.screen.settings_btn.rect)
+    tapRect(H.host.screen.settings_row.rect)
     assert.are.equal("settings", top())
     return H.host.screen
 end

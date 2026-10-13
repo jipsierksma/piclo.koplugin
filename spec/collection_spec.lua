@@ -64,6 +64,51 @@ describe("continue", function()
     end)
 end)
 
+describe("play", function()
+    it("starts the first puzzle not solved or revealed, in unlocked packs", function()
+        local col, progress = fresh()
+        local starter = catalog:pack("starter").puzzles
+        assert.are.equal(starter[1], col:playTarget())
+        progress:markSolved(starter[1].id, 10)
+        progress:markSolved(starter[2].id, 10, true)
+        assert.are.equal(starter[3], col:playTarget())
+    end)
+
+    it("moves on to the next pack and runs out when all is done", function()
+        local col, progress = fresh()
+        solve(progress, "starter", 8)
+        assert.are.equal(catalog:pack("house").puzzles[1], col:playTarget())
+        for __, pack in ipairs(catalog.packs) do solve(progress, pack.id, #pack.puzzles) end
+        assert.is_nil(col:playTarget())
+    end)
+
+    it("puts the puzzle in progress first, then the next one, then the latest solved", function()
+        local col, progress = fresh()
+        local starter = catalog:pack("starter").puzzles
+        assert.are.equal("play", col:spotlight().kind)
+        progress:setLastPuzzle(starter[4].id)
+        progress:saveBoard(starter[4].id, { 1 }, 25, 30)
+        local spot = col:spotlight()
+        assert.are.equal("continue", spot.kind)
+        assert.are.equal(starter[4], spot.puzzle)
+        for __, pack in ipairs(catalog.packs) do solve(progress, pack.id, #pack.puzzles) end
+        spot = col:spotlight()
+        assert.are.equal("done", spot.kind)
+        assert.is_not_nil(spot.puzzle)
+        progress:record(starter[2].id).solved_at = os.time() + 100
+        assert.are.equal(starter[2], col:spotlight().puzzle)
+    end)
+
+    it("counts solved puzzles over all packs", function()
+        local col, progress = fresh()
+        local solved, total = col:totals()
+        assert.are.equal(0, solved)
+        assert.are.equal(30, total)
+        solve(progress, "starter", 3)
+        assert.are.equal(3, (col:totals()))
+    end)
+end)
+
 describe("next puzzle", function()
     it("suggests the next unsolved one in the pack, wrapping round", function()
         local col, progress = fresh()

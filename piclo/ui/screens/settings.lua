@@ -61,7 +61,9 @@ function SettingsScreen.new(opts)
     local app = opts.app
     local self = setmetatable({ app = app, cleared = opts.cleared, page = 1, labels = {}, controls = {} },
         SettingsScreen)
-    self.header = HeaderBar.new{ title = _("Settings"), on_back = function() app:back() end }
+    -- The version sits on the right of the header, e.g. "Piclo 0.6.0".
+    self.header = HeaderBar.new{ title = _("Settings"), on_back = function() app:back() end,
+        aside = app.version and T(_("Piclo %1"), app.version) or nil }
     return self
 end
 
