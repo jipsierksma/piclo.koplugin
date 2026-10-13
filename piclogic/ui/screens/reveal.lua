@@ -48,7 +48,7 @@ data: mode ("solved" | "view"), puzzle, elapsed, best, result
 ]]
 function RevealScreen.new(opts)
     local app, data = opts.app, opts.data
-    local self = setmetatable({ app = app, data = data, labels = {} }, RevealScreen)
+    local self = setmetatable({ app = app, data = data, rail_side = opts.rail_side, labels = {} }, RevealScreen)
     local p = data.puzzle
     if data.mode == "view" then
         self.primary = TextButton.new{ text = _("Play again"), primary = true,
@@ -221,7 +221,7 @@ end
 function RevealScreen:layout(dimen)
     local W, H = dimen.w, dimen.h
     local p = self.data.puzzle
-    local placement = BoardPlacement.compute(p, W, H)
+    local placement = BoardPlacement.compute(p, W, H, self.rail_side)
     if placement.geom then
         local pic = BoardPlacement.pictureBox(placement.geom)
         local fits

@@ -2,8 +2,9 @@
 The plugin's single full-screen window. Screens swap inside it, so KOReader
 sees one widget and lifecycle events land in one place:
 
-  gestures          forwarded to the current screen
-  Back key          app:back(); page-turn keys go to the screen
+  gestures          forwarded to the current screen, or to an open sheet
+  Back key          closes an open sheet, else app:back(); page-turn keys
+                    go to the screen
   Suspend/Resume    app pauses and resumes the timer
   rotation/resize   re-layout and a flashing repaint
   FlushSettings     app saves (KOReader sends it on close and periodically)
@@ -24,6 +25,7 @@ local Host = InputContainer:extend{
     covers_fullscreen = true,
     app = nil,
     screen = nil,
+    sheet = nil,
 }
 
 local GESTURES = {
@@ -55,6 +57,7 @@ Shows `screen` in the window with a flashing transition; refresh = "full"
 asks for the stronger full flash (used by the reveal).
 ]]
 function Host:setScreen(screen, refresh)
+    self:closeSheet(false)
     if self.screen and self.screen ~= screen and self.screen.free then
         self.screen:free()
     end
@@ -71,19 +74,54 @@ end
 function Host:paintTo(bb, x, y)
     bb:paintRect(x, y, self.dimen.w, self.dimen.h, Theme.WHITE)
     if self.screen then self.screen:paint(bb) end
+    if self.sheet then self.sheet:paint(bb) end
+end
+
+-- Repaints everything into the screen buffer, refreshing only `rects`.
+function Host:repaintRegions(rects)
+    Refresh.regions(self, "ui", rects, function(bb) self:paintTo(bb, 0, 0) end)
+end
+
+--- Opens a sheet over the screen, replacing any open one.
+function Host:showSheet(sheet)
+    local old = self.sheet
+    sheet.window = self
+    sheet:layout(self.dimen)
+    self.sheet = sheet
+    local rects = { sheet.rect }
+    if old then
+        old:free()
+        rects[2] = old.rect
+    end
+    self:repaintRegions(rects)
+end
+
+--- Closes the open sheet; repaint = false when the screen is about to change anyway.
+function Host:closeSheet(repaint)
+    local old = self.sheet
+    if not old then return end
+    self.sheet = nil
+    old:free()
+    if repaint ~= false then self:repaintRegions({ old.rect }) end
 end
 
 function Host:relayout()
     self.dimen = Geom:new{ x = 0, y = 0, w = Screen:getWidth(), h = Screen:getHeight() }
     Theme.update()
     if self.screen then self.screen:layout(self.dimen) end
+    if self.sheet then self.sheet:layout(self.dimen) end
     UIManager:setDirty(self, "full")
 end
 
--- Gestures: the screen decides; we always consume them so nothing leaks to
--- the reader or file browser underneath.
+-- Gestures: the screen decides (or an open sheet, which only takes taps);
+-- we always consume them so nothing leaks to the reader or file browser
+-- underneath.
 local function forward(method)
     return function(self, _, ges)
+        if self.sheet then
+            if method == "onTap" then self.sheet:onTap(ges) end
+            return true
+        end
         local screen = self.screen
         if screen and screen[method] then screen[method](screen, ges) end
         return true
@@ -98,12 +136,17 @@ Host.onPanRelease = forward("onPanRelease")
 Host.onSwipe = forward("onSwipe")
 
 function Host:onClose()
-    self.app:back()
+    if self.sheet then
+        self:closeSheet()
+    else
+        self.app:back()
+    end
     return true
 end
 
 -- Page-turn keys: forward is true for PgFwd (key.key is e.g. "RPgFwd").
 function Host:onPageKey(_, key)
+    if self.sheet then return true end
     local forward = not (key and key.key and tostring(key.key):find("Back"))
     if self.screen and self.screen.onPageKey then self.screen:onPageKey(forward) end
     return true
@@ -146,6 +189,10 @@ function Host:onFlushSettings()
 end
 
 function Host:onCloseWidget()
+    if self.sheet then
+        self.sheet:free()
+        self.sheet = nil
+    end
     if self.screen and self.screen.free then self.screen:free() end
     self.screen = nil
     self.app:onClosed()

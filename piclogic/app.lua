@@ -4,12 +4,14 @@ progress and the game in play. Screens call it to move around; the window
 passes lifecycle events (suspend, close) up to it.
 
 Navigation is a stack of routes ({name = "home" | "help" | "pack" | "game"
-| "reveal", ...}); back pops one. Screens are rebuilt from data each time
-they show, so they always reflect current progress.
+| "reveal" | "settings", ...}); back pops one. Screens are rebuilt from
+data and settings each time they show, so a changed setting takes effect as
+soon as its screen is back on top.
 ]]
 
 local UIManager = require("ui/uimanager")
 local Catalog = require("piclogic/data/catalog")
+local Collection = require("piclogic/collection")
 local Game = require("piclogic/game")
 local GameScreen = require("piclogic/ui/screens/game")
 local HelpScreen = require("piclogic/ui/screens/help")
@@ -19,6 +21,7 @@ local Icons = require("piclogic/ui/icons")
 local PackScreen = require("piclogic/ui/screens/pack")
 local Progress = require("piclogic/storage/progress")
 local RevealScreen = require("piclogic/ui/screens/reveal")
+local SettingsScreen = require("piclogic/ui/screens/settings")
 local T = require("ffi/util").template
 local _ = require("gettext")
 
@@ -59,6 +62,23 @@ function App:progress()
     return self._progress
 end
 
+function App:collection()
+    if not self._collection then
+        self._collection = Collection.new(self:catalog(), self:progress())
+    end
+    return self._collection
+end
+
+function App:setting(key)
+    return self:progress():setting(key)
+end
+
+--- Saves a setting; screens pick it up when they are next built.
+function App:setSetting(key, value)
+    self:progress():setSetting(key, value)
+    self:scheduleFlush()
+end
+
 -- Navigation --------------------------------------------------------------
 
 --- Opens the app on its home screen (with help first, on the very first run).
@@ -78,25 +98,35 @@ end
 function App:build(route)
     if route.name == "home" then return HomeScreen.new{ app = self } end
     if route.name == "help" then return HelpScreen.new{ app = self, first_run = route.first_run } end
+    if route.name == "settings" then return SettingsScreen.new{ app = self, cleared = route.cleared } end
     if route.name == "pack" then
         return PackScreen.new{ app = self, pack = self:catalog():pack(route.pack_id), page = route.page }
     end
     if route.name == "game" then
         local p = self.game.puzzle
-        local deghost = self:progress():setting("deghost_every")
+        local deghost = self:setting("deghost_every")
+        self.game:setMistakeMode(self:setting("mistakes"))
         return GameScreen.new{
             app = self,
             game = self.game,
             -- e.g. "Around the House · 7"
             title = T(_("%1 · %2"), self:catalog():pack(p.pack_id).title, p.number),
             deghost_every = (deghost and deghost > 0) and deghost or nil,
+            highlight_done = self:setting("highlight_done"),
+            hold_action = self:setting("hold_action"),
+            show_timer = self:setting("show_timer"),
+            rail_side = self:setting("rail_side"),
         }
     end
-    return RevealScreen.new{ app = self, data = route.data }
+    return RevealScreen.new{ app = self, data = route.data, rail_side = self:setting("rail_side") }
 end
 
+-- The timer runs only while the board is on screen.
 function App:render(refresh)
     local route = self.stack[#self.stack]
+    if self.game then
+        if route.name == "game" then self.game:resume() else self.game:pause() end
+    end
     self.host:setScreen(self:build(route), refresh)
 end
 
@@ -132,6 +162,10 @@ function App:showHelp()
     self:push{ name = "help" }
 end
 
+function App:showSettings()
+    self:push{ name = "settings" }
+end
+
 function App:showPack(pack_id)
     self:push{ name = "pack", pack_id = pack_id }
 end
@@ -142,14 +176,16 @@ function App:rememberPage(page)
     if top and top.name == "pack" then top.page = page end
 end
 
---- Unsolved puzzles open the board; solved ones open their picture.
+--- Unsolved puzzles open the board; solved and revealed ones their picture.
 function App:openPuzzle(puzzle)
     local progress = self:progress()
-    if progress:isSolved(puzzle.id) then
+    local revealed = progress:isRevealed(puzzle.id)
+    if revealed or progress:isSolved(puzzle.id) then
         self:push{ name = "reveal", data = {
             mode = "view",
             puzzle = puzzle,
             best = progress:best(puzzle.id),
+            revealed = revealed,
         } }
         return
     end
@@ -187,73 +223,48 @@ function App:close()
     end
 end
 
--- Data for screens ------------------------------------------------------
+-- The game in play ------------------------------------------------------
 
---- The puzzle to offer on the Continue card, or nil.
-function App:continueTarget()
-    local progress = self:progress()
-    local id = progress.last_puzzle
-    local p = id and self:catalog():puzzle(id)
-    if not p or not progress:inProgress(id) then return nil end
-    return {
-        puzzle = p,
-        pack = self:catalog():pack(p.pack_id),
-        cells = progress:board(p),
-        elapsed = progress:elapsed(id),
-    }
-end
-
-function App:solvedIn(pack_id)
-    local pack = self:catalog():pack(pack_id)
-    return pack and self:progress():solvedCount(pack) or 0
-end
-
-function App:packInfo(pack)
-    local catalog = self:catalog()
-    local info = {
-        unlocked = catalog:isUnlocked(pack, function(id) return self:solvedIn(id) end),
-        solved = self:progress():solvedCount(pack),
-        total = #pack.puzzles,
-    }
-    if pack.unlock then
-        info.rule = { count = pack.unlock.count, after_title = catalog:pack(pack.unlock.pack).title }
-    end
-    return info
-end
-
-function App:lockedPacks()
-    local locked = {}
-    for __, pack in ipairs(self:catalog().packs) do
-        if not self:packInfo(pack).unlocked then locked[pack.id] = true end
-    end
-    return locked
+--- Clears the board in play and starts its time over.
+function App:restartGame()
+    if not self.game then return end
+    self.game:restart()
+    self:saveGame()
+    self:scheduleFlush()
+    self:render()
 end
 
 --[[
-The puzzle to suggest after `puzzle`: the next unsolved one in its pack
-(wrapping round), else the first unsolved one in a later unlocked pack.
+"Show solution": records the puzzle as revealed (not solved), forgets the
+board in play and shows the picture.
 ]]
-function App:nextAfter(puzzle)
-    local catalog, progress = self:catalog(), self:progress()
-    local pack = catalog:pack(puzzle.pack_id)
-    local n = #pack.puzzles
-    for k = 1, n - 1 do
-        local p = pack.puzzles[(puzzle.number - 1 + k) % n + 1]
-        if not progress:isSolved(p.id) then return p end
-    end
-    local after = false
-    for __, other in ipairs(catalog.packs) do
-        if after and self:packInfo(other).unlocked then
-            for __, p in ipairs(other.puzzles) do
-                if not progress:isSolved(p.id) then return p end
-            end
-        end
-        if other.id == pack.id then after = true end
-    end
-    return nil
+function App:showSolution()
+    local game = self.game
+    if not game then return end
+    game:pause()
+    local progress, p = self:progress(), game.puzzle
+    progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
+    progress:markSolved(p.id, game:elapsed(), true)
+    self.game = nil
+    self:flush()
+    self:replaceTop({ name = "reveal", data = {
+        mode = "solved",
+        puzzle = p,
+        revealed = true,
+        next = self:collection():nextAfter(p),
+        unlocked = {},
+    } }, "full")
 end
 
--- The game in play ------------------------------------------------------
+--- Forgets all puzzle progress (settings stay) and drops the game in play.
+function App:resetProgress()
+    self:cancelReveal()
+    self.game = nil
+    self:progress():resetAll()
+    self:flush()
+    self.stack = { { name = "home" }, { name = "settings", cleared = true } }
+    self:render()
+end
 
 function App:startGame(puzzle)
     self:stopGame()
@@ -306,17 +317,11 @@ end
 
 -- Records the solve, then shows the reveal after a short pause.
 function App:onSolved(game)
-    local progress, p = self:progress(), game.puzzle
-    local locked_before = self:lockedPacks()
+    local progress, p, collection = self:progress(), game.puzzle, self:collection()
+    local locked_before = collection:lockedPacks()
     progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
     local result = progress:markSolved(p.id, game:elapsed())
-    local unlocked = {}
-    local locked_after = self:lockedPacks()
-    for __, pack in ipairs(self:catalog().packs) do
-        if locked_before[pack.id] and not locked_after[pack.id] then
-            unlocked[#unlocked + 1] = pack.title
-        end
-    end
+    local unlocked = collection:newlyUnlocked(locked_before)
     self:flush()
     local data = {
         mode = "solved",
@@ -324,7 +329,7 @@ function App:onSolved(game)
         elapsed = game:elapsed(),
         best = progress:best(p.id),
         result = result,
-        next = self:nextAfter(p),
+        next = collection:nextAfter(p),
         unlocked = unlocked,
     }
     self.reveal_task = function()
@@ -353,7 +358,8 @@ function App:onSuspend()
 end
 
 function App:onResume()
-    if self.game then self.game:resume() end
+    local route = self.stack[#self.stack]
+    if self.game and route and route.name == "game" then self.game:resume() end
 end
 
 return App

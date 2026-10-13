@@ -28,7 +28,7 @@ Progress.FILE = "piclogic.lua"
 Progress.DEFAULTS = {
     mistakes = "off", -- "off" | "request" | "instant"
     highlight_done = true,
-    hold_action = "cross", -- "cross" | "opposite"
+    hold_action = "opposite", -- hold uses the other tool, or "cross" always
     show_timer = false,
     deghost_every = 20, -- edits; 0 = never
     rail_side = "right", -- landscape toolbar: "right" | "left"
@@ -143,6 +143,12 @@ end
 function Progress:isSolved(id)
     local rec = self.puzzles[id]
     return rec ~= nil and rec.solved == true
+end
+
+--- Shown with "Show solution" and not solved since.
+function Progress:isRevealed(id)
+    local rec = self.puzzles[id]
+    return rec ~= nil and rec.revealed == true and rec.solved ~= true
 end
 
 --- Started (has a saved board) and not solved.

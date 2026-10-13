@@ -1,6 +1,7 @@
 --[[
 Pack screen, the collection: a grid of square tiles.
   solved       the finished picture, crisp at a whole-pixel scale, and its title
+  revealed     the same, with the title in gray: seen with "Show solution", not earned
   in progress  the board so far plus a small corner mark, "???" underneath
   new          a hairline square with the puzzle number, "???" underneath
 Pages with swipes and the page-turn keys when the tiles don't fit one screen.
@@ -74,20 +75,22 @@ function PackScreen:layout(dimen)
             h = grid.tile,
         }
         local solved = progress:isSolved(p.id)
+        local shown = solved or progress:isRevealed(p.id)
         local tile = {
             puzzle = p,
             rect = rect,
             caption_rect = { x = rect.x, y = rect.y + rect.h + Theme.space.xs, w = rect.w, h = caption_h },
             solved = solved,
-            cells = (not solved) and progress:board(p) or nil,
+            shown = shown,
+            cells = (not shown) and progress:board(p) or nil,
             caption = self:label{
-                text = solved and p.title or _("???"),
+                text = shown and p.title or _("???"),
                 size = "caption",
                 color = solved and Theme.BLACK or Theme.SECONDARY,
                 max_width = rect.w,
             },
         }
-        if not solved and not tile.cells then
+        if not shown and not tile.cells then
             tile.number = self:label{ text = tostring(p.number), role = "title", color = Theme.SECONDARY }
         end
         self.tiles[#self.tiles + 1] = tile
@@ -105,7 +108,7 @@ function PackScreen:paintTile(bb, tile)
     local inner = { x = r.x + g, y = r.y + g, w = r.w - 2 * g, h = r.h - 2 * g }
     -- Every tile gets the same hairline frame, so the grid reads as one set.
     bb:paintBorder(r.x, r.y, r.w, r.h, Theme.line.hair, Theme.BLACK)
-    if tile.solved then
+    if tile.shown then
         Picture.paint(bb, tile.puzzle, inner)
     else
         if tile.cells then

@@ -32,6 +32,8 @@ local function content()
         { kind = "example" },
         { kind = "heading", text = _("Marking squares") },
         { kind = "para", text = _("Choose Fill or Cross in the toolbar, then tap a square. Tap it again to clear it. Hold a square to use the other tool. Drag along a row or column to mark several squares at once. The page-turn buttons switch tools.") },
+        { kind = "heading", text = _("Getting stuck") },
+        { kind = "para", text = _("The bulb in the toolbar works out the next line for you and highlights its numbers. Undo takes the step back. In Settings you can also have mistakes checked, on request or as you play.") },
         { kind = "heading", text = _("Finishing") },
         { kind = "para", text = _("A number turns gray once its run is complete. When every filled square is right, the picture appears and joins your collection. Solving puzzles in a pack unlocks the next one.") },
     }

@@ -1,25 +1,52 @@
 --[[
-Segmented control: a row (or column, in the landscape rail) of icon
-segments with one selected. The selected segment is inverted: black with a
-white glyph. One regular-weight outline holds the segments, with hairline
-dividers between them.
+Segmented control: a row (or column, in the landscape rail) of icon or
+text segments with one selected. The selected segment is inverted: black
+with a white glyph or label. One regular-weight outline holds the segments,
+with hairline dividers between them.
 ]]
 
 local Icons = require("piclogic/ui/icons")
+local Label = require("piclogic/ui/components/label")
 local Theme = require("piclogic/ui/theme")
 
 local Segmented = {}
 Segmented.__index = Segmented
 
---- opts: items = { {id, icon}, ... }, selected = id, on_change(id)
+--- opts: items = { {id, icon} or {id, text}, ... }, selected = id, on_change(id)
 function Segmented.new(opts)
-    return setmetatable({
+    local self = setmetatable({
         items = opts.items,
         selected = opts.selected,
         on_change = opts.on_change,
         rect = { x = 0, y = 0, w = 0, h = 0 },
         segs = {},
     }, Segmented)
+    for __, item in ipairs(self.items) do
+        if item.text then
+            item.dark = Label.new{ text = item.text, color = Theme.BLACK }
+            item.light = Label.new{ text = item.text, color = Theme.WHITE }
+        end
+    end
+    return self
+end
+
+function Segmented:free()
+    for __, item in ipairs(self.items) do
+        if item.dark then
+            item.dark:free()
+            item.light:free()
+            item.dark, item.light = nil, nil
+        end
+    end
+end
+
+--- Width for text segments: equal segments, each fitting the widest label.
+function Segmented:preferredWidth()
+    local widest = 0
+    for __, item in ipairs(self.items) do
+        widest = math.max(widest, item.dark and item.dark.w or Theme.icon)
+    end
+    return #self.items * (widest + 2 * Theme.space.l)
 end
 
 --- Lays segments out along the long side of the rect.
@@ -69,7 +96,11 @@ function Segmented:paint(bb)
         local s = self.segs[k]
         local on = item.id == self.selected
         bb:paintRect(s.x, s.y, s.w, s.h, on and Theme.BLACK or Theme.WHITE)
-        Icons.paint(bb, item.icon, Theme.icon, on and "inverted" or "normal", s)
+        if item.dark then
+            (on and item.light or item.dark):paintIn(bb, s, "center")
+        else
+            Icons.paint(bb, item.icon, Theme.icon, on and "inverted" or "normal", s)
+        end
         if k > 1 then
             if self.vertical then
                 bb:paintRect(s.x, s.y, s.w, Theme.line.hair, Theme.BLACK)
