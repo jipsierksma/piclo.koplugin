@@ -14,7 +14,7 @@ local UIManager = require("ui/uimanager")
 local gesture, tapRect, tapCell, cellPoint = H.gesture, H.tapRect, H.tapCell, H.cellPoint
 local shot, clean, top = H.shot, H.clean, H.top
 
---- Opens settings from the home footer.
+--- Opens settings from the home menu.
 local function openSettings(w, h)
     H.launch(w, h)
     if top() == "help" then H.app:back() end
@@ -135,6 +135,18 @@ describe("more menu", function()
             if row.item.text == text then return row end
         end
     end
+
+    it("lets the panel show the pressed button before the menu paints", function()
+        local screen = playWith({})
+        UIManager:takeRefreshes()
+        local before = UIManager.yields
+        tapRect(screen.header.right.rect)
+        assert.are.equal(before + 1, UIManager.yields)
+        local modes = {}
+        for _, r in ipairs(UIManager:takeRefreshes()) do modes[#modes + 1] = r.mode end
+        assert.are.equal("fast", modes[1])
+        assert.is_not_nil(H.host.sheet)
+    end)
 
     it("shows the time played and closes on a tap outside or the back key", function()
         local _, _, sheet = openMenu()

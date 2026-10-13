@@ -98,6 +98,25 @@ describe("quitting", function()
         assert.truthy(saved and saved.puzzles[id])
     end)
 
+    it("comes back on top when opened while another window covers it", function()
+        local _, screen, game = play(2, 1)
+        tapCell(screen, 1, 1)
+        local id = game.puzzle.id
+        -- What a home-screen plugin does when the device wakes.
+        local cover = { covers_fullscreen = true, paintTo = function() end, handleEvent = function() end }
+        UIManager:show(cover)
+        H.plugin:onPicloOpen()
+        local hosts = 0
+        for _, w in ipairs(UIManager.stack) do
+            if w.name == "piclo" then hosts = hosts + 1 end
+        end
+        assert.are.equal(1, hosts)
+        assert.are.equal(app.host, UIManager:getTopmostVisibleWidget())
+        assert.are.equal("home", top())
+        assert.are.equal(id, app.host.screen.spot.puzzle.id)
+        assert.is_true(app:progress():inProgress(id))
+    end)
+
     it("does nothing when its window isn't open", function()
         launch()
         app:close()

@@ -85,6 +85,12 @@ end
 
 --- Opens the app on its home screen (with help first, on the very first run).
 function App:open()
+    -- Still open but covered, e.g. a home-screen plugin put itself on top
+    -- when the device woke: rendering would stay out of sight, so close
+    -- (which saves) and open again on top.
+    if self.host and UIManager:getTopmostVisibleWidget() ~= self.host then
+        self:close()
+    end
     if not self.host then
         self.host = Host:new{ app = self }
         UIManager:show(self.host)
