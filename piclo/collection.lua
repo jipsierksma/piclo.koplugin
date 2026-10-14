@@ -51,8 +51,22 @@ function Collection:latestSolved()
     return latest
 end
 
+--- True before any puzzle was started, solved or revealed (also after a reset).
+function Collection:isFresh()
+    local progress = self.progress
+    for __, pack in ipairs(self.catalog.packs) do
+        for _, p in ipairs(pack.puzzles) do
+            if progress:isSolved(p.id) or progress:isRevealed(p.id) or progress:inProgress(p.id) then
+                return false
+            end
+        end
+    end
+    return true
+end
+
 --[[
 What the title screen puts forward, one of:
+  { kind = "start", puzzle }                      nothing played yet: the first puzzle
   { kind = "continue", puzzle, cells, elapsed }   the puzzle in progress
   { kind = "play", puzzle }                       the first one not played yet
   { kind = "done", puzzle }                       nothing left: the latest solved picture (or nil)
@@ -64,6 +78,7 @@ function Collection:spotlight()
         return cont
     end
     local p = self:playTarget()
+    if p and self:isFresh() then return { kind = "start", puzzle = p } end
     if p then return { kind = "play", puzzle = p } end
     return { kind = "done", puzzle = self:latestSolved() }
 end
@@ -83,11 +98,15 @@ function Collection:solvedIn(pack_id)
     return pack and self.progress:solvedCount(pack) or 0
 end
 
---- { unlocked, solved, total, rule = {count, after_title} (locked packs) }
+--[[
+{ unlocked, solved, total, rule = {count, after_title} (locked packs) }.
+A pack stays unlocked once it was (see recordUnlocks).
+]]
 function Collection:packInfo(pack)
     local catalog = self.catalog
     local info = {
-        unlocked = catalog:isUnlocked(pack, function(id) return self:solvedIn(id) end),
+        unlocked = self.progress:isPackUnlocked(pack.id)
+            or catalog:isUnlocked(pack, function(id) return self:solvedIn(id) end),
         solved = self.progress:solvedCount(pack),
         total = #pack.puzzles,
     }
@@ -95,6 +114,16 @@ function Collection:packInfo(pack)
         info.rule = { count = pack.unlock.count, after_title = catalog:pack(pack.unlock.pack).title }
     end
     return info
+end
+
+--[[
+Remembers every pack that is unlocked now, so it stays unlocked when the
+puzzles that opened it change (say a drawing is replaced in an update).
+]]
+function Collection:recordUnlocks()
+    for __, pack in ipairs(self.catalog.packs) do
+        if self:packInfo(pack).unlocked then self.progress:markPackUnlocked(pack.id) end
+    end
 end
 
 --- Set of locked pack ids.

@@ -5,6 +5,7 @@ back out.
 ]]
 
 local H = require("ui_harness")
+local Theme = require("piclo/ui/theme")
 local UIManager = require("ui/uimanager")
 
 local host, app
@@ -21,20 +22,39 @@ local function openPacks()
 end
 
 describe("title screen", function()
-    it("offers the first puzzle not played yet", function()
+    it("starts with just a Play button and a light menu", function()
         launch()
         app:back()
         local home = host.screen
+        assert.are.equal("start", home.spot.kind)
         assert.are.equal("Play", home.primary.text)
-        assert.are.equal("First Steps · 1", home.card_title.widget.text)
+        assert.is_nil(home.thumb)
+        assert.is_nil(home.header)
+        assert.are.equal("0 of 30 solved", home.packs_row.aside.widget.text)
+        assert.are.equal(4, #home.rows)
+        assert.is_false(home.close_row.chevron)
+        shot("home_start")
+        clean()
+        tapRect(home.primary.rect)
+        assert.are.equal("game", top())
+        assert.are.equal(app:catalog().packs[1].puzzles[1], app.game.puzzle)
+    end)
+
+    it("offers the next puzzle in a card once one was played", function()
+        launch()
+        app:back()
+        app:progress():markSolved(app:catalog().packs[1].puzzles[1].id, 30)
+        app:render()
+        local home = host.screen
+        assert.are.equal("Play", home.primary.text)
+        assert.are.equal("First Steps · 2", home.card_title.widget.text)
         assert.are.equal("5×5 · New", home.card_sub.widget.text)
-        assert.are.equal("1", home.number.widget.text)
-        assert.are.equal("0 of 30 solved", home.packs_row.sub.widget.text)
+        assert.are.equal("2", home.number.widget.text)
         shot("home_play")
         clean()
         tapRect(home.thumb)
         assert.are.equal("game", top())
-        assert.are.equal(app:catalog().packs[1].puzzles[1], app.game.puzzle)
+        assert.are.equal(app:catalog().packs[1].puzzles[2], app.game.puzzle)
     end)
 
     it("shows the latest picture and opens Packs when everything is solved", function()
@@ -63,20 +83,29 @@ describe("title screen", function()
     end)
 
     for _, size in ipairs({ { 1264, 1680 }, { 1680, 1264 }, { 758, 1024 }, { 600, 800 }, { 800, 600 } }) do
-        it("fits logo, card and rows at " .. size[1] .. "x" .. size[2], function()
+        it("spaces logo, card and menu evenly at " .. size[1] .. "x" .. size[2], function()
             launch(size[1], size[2])
             app:back()
+            app:progress():markSolved(app:catalog().packs[1].puzzles[1].id, 30)
+            app:render()
             local home = host.screen
-            assert.is_not_nil(home.logo)
-            assert.is_true(home.logo.y >= 0 and home.thumb.y >= home.logo.y + home.logo.h)
-            local last = home.rows[#home.rows].rect
+            local logo, thumb = home.logo, home.thumb
+            assert.is_not_nil(logo)
+            assert.is_not_nil(thumb)
+            local first, last = home.rows[1].rect, home.rows[#home.rows].rect
             assert.is_true(last.y + last.h <= size[2])
             assert.is_true(home.primary.rect.x + home.primary.rect.w <= size[1])
+            local gaps = { logo.y, thumb.y - (logo.y + logo.h) }
             if size[1] > size[2] then
-                assert.is_true(home.thumb.x + home.thumb.w <= home.rows[1].rect.x)
+                -- Landscape: logo and card stay together, centered.
+                assert.is_true(thumb.x + thumb.w <= first.x)
+                assert.is_true(gaps[2] <= Theme.space.xxl)
+                gaps = { logo.y, size[2] - (thumb.y + thumb.h) }
             else
-                assert.is_true(home.thumb.y + home.thumb.h <= home.rows[1].rect.y)
+                gaps[3] = first.y - (thumb.y + thumb.h)
+                gaps[4] = size[2] - (last.y + last.h)
             end
+            for k = 2, #gaps do assert.is_true(math.abs(gaps[k] - gaps[1]) <= #gaps, "even gaps") end
             clean()
         end)
     end
@@ -99,7 +128,7 @@ describe("title screen", function()
         assert.are.equal("packs", top())
         tapRect(host.screen.header.back.rect)
         assert.are.equal("home", top())
-        tapRect(host.screen.header.back.rect)
+        tapRect(host.screen.close_row.rect)
         assert.are.equal(0, #UIManager.stack)
     end)
 

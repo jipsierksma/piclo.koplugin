@@ -34,6 +34,7 @@ local Theme = require("piclo/ui/theme")
 local UIManager = require("ui/uimanager")
 
 local SHOTS = os.getenv("PICLO_SHOTS")
+local Host = require("piclo/ui/host")
 local Piclo = dofile("main.lua")
 
 function H.setScreen(w, h)
@@ -49,6 +50,8 @@ end
 
 --- Starts the plugin as from the menu. keep_disk keeps saved progress.
 function H.launch(w, h, keep_disk)
+    -- Specs tap faster than any person; the guard has its own spec.
+    Host.TAP_GUARD = 0
     H.setScreen(w or 1264, h or 1680)
     UIManager:reset()
     BB.out_of_bounds = 0

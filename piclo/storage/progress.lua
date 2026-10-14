@@ -9,6 +9,8 @@ Layout of the file (schema 1):
   settings = { [key] = value }     -- only values the user changed
   last_puzzle = id
   seen_help = bool
+  unlocked = { [pack id] = true }  -- packs ever unlocked; they stay unlocked
+                                   -- even if the puzzles that opened them change
 
 Writes land in memory at once; flush() writes the file. The app debounces
 flushes and always flushes on close and suspend. Ids are never derived from
@@ -81,6 +83,10 @@ function Progress:load()
     local last = store:readSetting("last_puzzle")
     self.last_puzzle = type(last) == "string" and last or nil
     self.seen_help = store:readSetting("seen_help") == true
+    self.unlocked = {}
+    for id, v in pairs(tableOr(store:readSetting("unlocked"), "unlocked packs")) do
+        if type(id) == "string" and v == true then self.unlocked[id] = true end
+    end
 end
 
 function Progress:touch()
@@ -96,7 +102,14 @@ function Progress:flush()
     store:saveSetting("settings", self.settings)
     store:saveSetting("last_puzzle", self.last_puzzle)
     store:saveSetting("seen_help", self.seen_help)
-    store:flush()
+    store:saveSetting("unlocked", self.unlocked)
+    -- A full or read-only disk must not take the game down; keep the
+    -- changes in memory and try again on the next flush.
+    local ok, err = pcall(store.flush, store)
+    if not ok then
+        logger.warn("piclo: could not save progress:", err)
+        return false
+    end
     self.dirty = false
     return true
 end
@@ -216,9 +229,21 @@ function Progress:setSeenHelp()
     end
 end
 
---- Forgets all puzzle progress; settings stay.
+function Progress:isPackUnlocked(id)
+    return self.unlocked[id] == true
+end
+
+function Progress:markPackUnlocked(id)
+    if not self.unlocked[id] then
+        self.unlocked[id] = true
+        self:touch()
+    end
+end
+
+--- Forgets all puzzle progress (and unlocked packs); settings stay.
 function Progress:resetAll()
     self.puzzles = {}
+    self.unlocked = {}
     self.last_puzzle = nil
     self:touch()
 end

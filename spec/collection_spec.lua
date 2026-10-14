@@ -85,6 +85,8 @@ describe("play", function()
     it("puts the puzzle in progress first, then the next one, then the latest solved", function()
         local col, progress = fresh()
         local starter = catalog:pack("starter").puzzles
+        assert.are.equal("start", col:spotlight().kind)
+        progress:markSolved(starter[1].id, 10, true)
         assert.are.equal("play", col:spotlight().kind)
         progress:setLastPuzzle(starter[4].id)
         progress:saveBoard(starter[4].id, { 1 }, 25, 30)

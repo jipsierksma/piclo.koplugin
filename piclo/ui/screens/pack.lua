@@ -5,6 +5,9 @@ Pack screen, the collection: a grid of square tiles.
   in progress  the board so far plus a small corner mark, "???" underneath
   new          a hairline square with the puzzle number, "???" underneath
 Pages with swipes and the page-turn keys when the tiles don't fit one screen.
+
+Right after a solve (opts.marked) the new picture gets a heavy frame and the
+screen opens on its page, with a "Next puzzle" pill at the bottom (opts.next).
 ]]
 
 local T = require("ffi/util").template
@@ -15,19 +18,28 @@ local Label = require("piclo/ui/components/label")
 local Layout = require("piclo/ui/layout")
 local Picture = require("piclo/ui/picture")
 local Refresh = require("piclo/ui/refresh")
+local TextButton = require("piclo/ui/components/text_button")
 local Theme = require("piclo/ui/theme")
 
 local PackScreen = {}
 PackScreen.__index = PackScreen
 
---- opts: app, pack, page (1-based, optional)
+--- opts: app, pack, page (1-based, optional), marked (puzzle id), next (puzzle)
 function PackScreen.new(opts)
-    local self = setmetatable({ app = opts.app, pack = opts.pack, page = opts.page or 1, labels = {} }, PackScreen)
-    self.header = HeaderBar.new{ title = opts.pack.title, on_back = function() opts.app:back() end }
+    local app = opts.app
+    local self = setmetatable({ app = app, pack = opts.pack, page = opts.page, marked = opts.marked, labels = {} },
+        PackScreen)
+    self.header = HeaderBar.new{ title = opts.pack.title, on_back = function() app:back() end }
+    if opts.next then
+        local p = opts.next
+        self.next_btn = TextButton.new{ text = _("Next puzzle"), primary = true,
+            on_tap = function() app:openPuzzle(p) end }
+    end
     return self
 end
 
 function PackScreen:free()
+    if self.next_btn then self.next_btn:free() end
     self.header:freeText()
     Label.freeAll(self.labels)
     self.labels = {}
@@ -49,13 +61,23 @@ function PackScreen:layout(dimen)
     local m, gutter = Theme.space.xl, Theme.space.l
     local caption_h = self:label{ text = "?", size = "caption" }.h + Theme.space.xs
     local area = { x = m, y = Theme.header_h + Theme.space.l, w = W - 2 * m, h = H - Theme.header_h - 2 * Theme.space.l }
+    local bottom = H - Theme.space.s
+    local t = Theme.touch
+    if self.next_btn then
+        local b = self.next_btn
+        local bw = math.min(area.w, math.max(b:preferredWidth(), t * 5))
+        b:setRect(math.floor((W - bw) / 2), H - Theme.space.l - t, bw, t)
+        area.h = area.h - t - Theme.space.l
+        bottom = b.rect.y - Theme.space.s
+    end
     local n = #self.pack.puzzles
     local grid = Layout.tileGrid(n, area.w, area.h, caption_h, gutter, Theme.min_tile)
     if grid.pages > 1 then
-        area.h = area.h - Theme.touch
+        area.h = area.h - t
         grid = Layout.tileGrid(n, area.w, area.h, caption_h, gutter, Theme.min_tile)
     end
     self.grid = grid
+    if not self.page then self.page = self:pageOf(self.marked, grid.per_page) end
     self.page = math.max(1, math.min(self.page, grid.pages))
 
     local used_w = grid.cols * grid.tile + (grid.cols - 1) * gutter
@@ -99,15 +121,25 @@ function PackScreen:layout(dimen)
     if grid.pages > 1 then
         self.pager = self:label{ text = T(_("%1 / %2"), self.page, grid.pages), size = "caption",
             color = Theme.SECONDARY }
-        self.pager_rect = { x = 0, y = H - Theme.touch - Theme.space.s, w = W, h = Theme.touch }
+        self.pager_rect = { x = 0, y = bottom - t, w = W, h = t }
     end
+end
+
+--- The page showing a puzzle id (1 when nil or not in this pack).
+function PackScreen:pageOf(id, per_page)
+    for k, p in ipairs(self.pack.puzzles) do
+        if p.id == id then return math.ceil(k / per_page) end
+    end
+    return 1
 end
 
 function PackScreen:paintTile(bb, tile)
     local r, g = tile.rect, Theme.space.s
     local inner = { x = r.x + g, y = r.y + g, w = r.w - 2 * g, h = r.h - 2 * g }
-    -- Every tile gets the same hairline frame, so the grid reads as one set.
-    bb:paintBorder(r.x, r.y, r.w, r.h, Theme.line.hair, Theme.BLACK)
+    -- Every tile gets the same hairline frame, so the grid reads as one set;
+    -- the picture just solved gets a heavy one.
+    local frame = tile.puzzle.id == self.marked and Theme.line.strong or Theme.line.hair
+    bb:paintBorder(r.x, r.y, r.w, r.h, frame, Theme.BLACK)
     if tile.shown then
         Picture.paint(bb, tile.puzzle, inner)
     else
@@ -126,6 +158,7 @@ function PackScreen:paint(bb)
     self.header:paint(bb)
     for __, tile in ipairs(self.tiles) do self:paintTile(bb, tile) end
     if self.pager then self.pager:paintIn(bb, self.pager_rect, "center") end
+    if self.next_btn then self.next_btn:paint(bb) end
 end
 
 function PackScreen:changePage(delta)
@@ -140,6 +173,7 @@ end
 function PackScreen:onTap(ges)
     local x, y = ges.pos.x, ges.pos.y
     local btn = self.header:buttonAt(x, y)
+    if not btn and self.next_btn and self.next_btn:contains(x, y) then btn = self.next_btn end
     if btn then
         Refresh.press(self.window, btn.rect, function(b) btn:paint(b, true) end)
         return btn.on_tap()

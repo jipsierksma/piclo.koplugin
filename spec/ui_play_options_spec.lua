@@ -193,7 +193,7 @@ describe("more menu", function()
         assert.is_nil(H.app:collection():continueTarget())
         clean()
         -- The collection shows the picture, with the title in gray.
-        tapRect(H.host.screen.secondary.rect)
+        tapRect(H.host.screen.primary.rect)
         assert.are.equal("pack", top())
         local tile = H.host.screen.tiles[p.number]
         assert.is_true(tile.shown)

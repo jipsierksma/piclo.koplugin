@@ -212,17 +212,31 @@ describe("solving", function()
         assert.are.same(gridBox(screen), reveal.box)
         -- a 5x5 grid is centered, and so is its picture
         assert.is_true(math.abs(reveal.box.x * 2 + reveal.box.w - Screen.w) <= 1)
-        assert.is_true(reveal.secondary.rect.x < reveal.primary.rect.x)
-        assert.are.equal(reveal.secondary.rect.y, reveal.primary.rect.y)
+        assert.are.equal(1, #reveal.buttons)
         assert.are.equal(game.puzzle.title, reveal.title.widget.text)
         assert.truthy(reveal.summary.widget.text:find("Solved in"))
-        assert.are.equal("Next puzzle", reveal.primary.text)
+        assert.are.equal("Back to collection", reveal.primary.text)
         shot("reveal_portrait")
         clean()
         assert.is_true(app:progress():isSolved(game.puzzle.id))
+        -- Back in the collection: the new picture framed, "Next puzzle" offered.
         tapRect(reveal.primary.rect)
+        assert.are.equal("pack", top())
+        local pack = host.screen
+        assert.are.equal(game.puzzle.id, pack.marked)
+        assert.are.equal("Next puzzle", pack.next_btn.text)
+        local last = pack.tiles[#pack.tiles].caption_rect
+        assert.is_true(last.y + last.h <= pack.next_btn.rect.y)
+        shot("pack_after_solve")
+        clean()
+        tapRect(pack.next_btn.rect)
         assert.are.equal("game", top())
         assert.are.equal(2, app.game.puzzle.number)
+        -- Leaving the next puzzle unsolved: the collection is back to normal.
+        app:back()
+        assert.are.equal("pack", top())
+        assert.is_nil(host.screen.marked)
+        assert.is_nil(host.screen.next_btn)
     end)
 
     it("announces a newly unlocked pack", function()
@@ -234,7 +248,7 @@ describe("solving", function()
         assert.are.same({ "Around the House" }, host.screen.data.unlocked)
         shot("reveal_unlock")
         clean()
-        tapRect(host.screen.secondary.rect)
+        tapRect(host.screen.primary.rect)
         assert.are.equal("pack", top())
         app:back()
         assert.is_true(host.screen.rows[2].info.unlocked)
@@ -420,8 +434,8 @@ describe("reveal placement", function()
             if b.x + b.w / 2 - mid > off then p, off = q, b.x + b.w / 2 - mid end
         end
         assert.is_true(off > 5, "some 10x10 picture sits right of center")
-        app:push{ name = "reveal", data = { mode = "solved", puzzle = p, elapsed = 10, unlocked = { "In the Woods" },
-            next = app:catalog().packs[2].puzzles[1] } }
+        -- Viewing a solved picture has two buttons, a pill and a quiet one.
+        app:push{ name = "reveal", data = { mode = "view", puzzle = p, best = 10, unlocked = { "In the Woods" } } }
         assert.are.equal(2, #host.screen.buttons)
         local rv = host.screen
         for _, e in ipairs(rv.text_pos) do
@@ -476,7 +490,7 @@ describe("layouts", function()
             local home = host.screen
             local last = home.rows[#home.rows].rect
             assert.is_true(last.y + last.h <= size[2])
-            assert.is_true(home.thumb.y >= Theme.header_h)
+            assert.is_true(home.primary.rect.y >= home.logo.y + home.logo.h)
             if size[1] == 1680 then shot("home_landscape_game") end
             clean()
             app:showPacks()
@@ -592,7 +606,7 @@ describe("playing", function()
         play(1, 1)
         tapRect(host.screen.header.back.rect)
         assert.are.equal("home", top())
-        tapRect(host.screen.header.back.rect)
+        tapRect(host.screen.close_row.rect)
         assert.are.equal(0, #UIManager.stack)
         assert.is_nil(app.host)
     end)

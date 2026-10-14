@@ -88,13 +88,16 @@ function App:open()
     -- Still open but covered, e.g. a home-screen plugin put itself on top
     -- when the device woke: rendering would stay out of sight, so close
     -- (which saves) and open again on top.
-    if self.host and UIManager:getTopmostVisibleWidget() ~= self.host then
+    -- Also when a close is pending: start over rather than close under the player.
+    if self.host and (self.close_task or UIManager:getTopmostVisibleWidget() ~= self.host) then
         self:close()
     end
     if not self.host then
         self.host = Host:new{ app = self }
         UIManager:show(self.host)
     end
+    -- Also covers saves from before unlocks were remembered.
+    self:collection():recordUnlocks()
     self.stack = { { name = "home" } }
     if not self:progress().seen_help then
         self:progress():setSeenHelp()
@@ -109,7 +112,8 @@ function App:build(route)
     if route.name == "settings" then return SettingsScreen.new{ app = self, cleared = route.cleared } end
     if route.name == "packs" then return PacksScreen.new{ app = self, page = route.page } end
     if route.name == "pack" then
-        return PackScreen.new{ app = self, pack = self:catalog():pack(route.pack_id), page = route.page }
+        return PackScreen.new{ app = self, pack = self:catalog():pack(route.pack_id), page = route.page,
+            marked = route.marked, next = route.next }
     end
     if route.name == "game" then
         local p = self.game.puzzle
@@ -162,10 +166,24 @@ function App:back()
     local top = table.remove(self.stack)
     if top and top.name == "game" then self:stopGame() end
     if #self.stack == 0 then
-        self:close()
+        self:closeSoon()
     else
         self:render()
     end
+end
+
+--[[
+Leaving: the window stays a moment (dropping taps) before it closes, so the
+second tap of a double tap can't open something in the file browser below.
+]]
+function App:closeSoon()
+    if not self.host or Host.TAP_GUARD <= 0 then return self:close() end
+    self.host:guard()
+    self.close_task = function()
+        self.close_task = nil
+        self:close()
+    end
+    UIManager:scheduleIn(Host.TAP_GUARD, self.close_task)
 end
 
 function App:showHelp()
@@ -192,6 +210,9 @@ end
 
 --- Unsolved puzzles open the board; solved and revealed ones their picture.
 function App:openPuzzle(puzzle)
+    -- Leaving a collection for a puzzle ends its "just solved" moment.
+    local top = self.stack[#self.stack]
+    if top and top.name == "pack" then top.marked, top.next = nil, nil end
     local progress = self:progress()
     local revealed = progress:isRevealed(puzzle.id)
     if revealed or progress:isSolved(puzzle.id) then
@@ -207,27 +228,35 @@ function App:openPuzzle(puzzle)
     self:push{ name = "game" }
 end
 
-function App:playNext(puzzle)
-    self:startGame(puzzle)
-    self:replaceTop{ name = "game" }
-end
-
 function App:playAgain(puzzle)
     self:progress():restart(puzzle.id)
     self:startGame(puzzle)
     self:replaceTop{ name = "game" }
 end
 
---- Returns to the pack's collection, reusing it from the stack if present.
-function App:backToCollection(pack_id)
+--[[
+Returns to the pack's collection, reusing it from the stack if present.
+after (optional): { marked = puzzle id just solved, next = puzzle to offer }
+for the collection to mark the new picture and offer "Next puzzle".
+]]
+function App:backToCollection(pack_id, after)
+    after = after or {}
+    local route
     for k = #self.stack, 1, -1 do
         local r = self.stack[k]
         if r.name == "pack" and r.pack_id == pack_id then
             for j = #self.stack, k + 1, -1 do self.stack[j] = nil end
-            return self:render()
+            route = r
+            break
         end
     end
-    self.stack = { { name = "home" }, { name = "packs" }, { name = "pack", pack_id = pack_id } }
+    if not route then
+        route = { name = "pack", pack_id = pack_id }
+        self.stack = { { name = "home" }, { name = "packs" }, route }
+    end
+    route.marked, route.next = after.marked, after.next
+    -- Open on the page with the new picture.
+    if after.marked then route.page = nil end
     self:render()
 end
 
@@ -341,6 +370,7 @@ function App:onSolved(game)
     progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
     local result = progress:markSolved(p.id, game:elapsed())
     local unlocked = collection:newlyUnlocked(locked_before)
+    collection:recordUnlocks()
     self:flush()
     local data = {
         mode = "solved",
@@ -365,6 +395,10 @@ end
 
 function App:onClosed()
     self:cancelReveal()
+    if self.close_task then
+        UIManager:unschedule(self.close_task)
+        self.close_task = nil
+    end
     self:stopGame()
     self:flush()
     self.stack = {}
@@ -377,9 +411,24 @@ function App:onSuspend()
     self:flush()
 end
 
-function App:onResume()
+-- The timer only runs while the board is actually in front of the player.
+function App:playing()
     local route = self.stack[#self.stack]
-    if self.game and route and route.name == "game" then self.game:resume() end
+    return self.game ~= nil and route ~= nil and route.name == "game"
+end
+
+--[[
+Waking up: another window (e.g. a home-screen plugin) may have come up over
+us, so only restart the clock when we're on top. Otherwise the next touch
+on the board restarts it (onInput).
+]]
+function App:onResume()
+    if self:playing() and UIManager:getTopmostVisibleWidget() == self.host then self.game:resume() end
+end
+
+--- Any gesture on our window: the player is here.
+function App:onInput()
+    if self:playing() then self.game:resume() end
 end
 
 return App

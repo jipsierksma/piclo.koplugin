@@ -6,6 +6,7 @@ plugin loader keeps this directory on package.path after loading
 (frontend/pluginloader.lua), so the namespaced requires resolve later.
 ]]
 
+local Device = require("device")
 local Dispatcher = require("dispatcher")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
@@ -15,7 +16,14 @@ local Piclo = WidgetContainer:extend{
     is_doc_only = false,
 }
 
+-- The board is played by touch; on a buttons-only device there would be no
+-- way to play, so Piclo offers neither a menu entry nor a gesture action.
+local function playable()
+    return Device:isTouchDevice()
+end
+
 function Piclo:onDispatcherRegisterActions()
+    if not playable() then return end
     Dispatcher:registerAction("piclo_open", {
         category = "none",
         event = "PicloOpen",
@@ -25,6 +33,7 @@ function Piclo:onDispatcherRegisterActions()
 end
 
 function Piclo:init()
+    if not playable() then return end
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
