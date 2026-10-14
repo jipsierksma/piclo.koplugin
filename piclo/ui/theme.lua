@@ -14,11 +14,13 @@ local Screen = Device.screen
 
 local Theme = {}
 
--- Tones. Two grays only in the UI: a light tint for bands and pressed
--- states, and a secondary text gray that is still easy to read.
+-- Tones. Three grays in the UI: a light tint for tracks and pressed states,
+-- a faint gray for guide lines (empty grids, as in the logo), and a
+-- secondary text gray that is still easy to read.
 Theme.WHITE = Blitbuffer.COLOR_WHITE
 Theme.BLACK = Blitbuffer.COLOR_BLACK
 Theme.TINT = Blitbuffer.COLOR_GRAY_E
+Theme.FAINT = Blitbuffer.COLOR_GRAY_D
 Theme.SECONDARY = Blitbuffer.COLOR_GRAY_6
 
 -- Reveal tones 0..4: e-ink native gray levels, so no dithering is needed.

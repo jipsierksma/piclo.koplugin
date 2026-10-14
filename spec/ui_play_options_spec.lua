@@ -261,18 +261,53 @@ describe("mistake checking", function()
         assert.are.equal(Cell.FILLED, game:cell(r, c))
         tapRect(screen.toolbar.check_btn.rect)
         assert.are.equal("wrong", game:mark((r - 1) * game.puzzle.w + c))
-        assert.are.equal("1 square is wrong", screen.header.title)
+        -- The message sits beside the title, which stays.
+        assert.are.equal("1 square is wrong", screen.header.aside)
+        assert.are.equal(screen.title, screen.header.title)
         shot("game_check")
         clean()
-        -- the next move brings the title back
+        -- the next move clears the message
         tapCell(screen, r, c)
-        assert.are.equal(screen.title, screen.header.title)
+        assert.is_nil(screen.header.aside)
+    end)
+
+    it("keeps a wrong fill hatched and draws a wrong cross heavy", function()
+        local screen, game = playWith({ mistakes = "request" })
+        local p = game.puzzle
+        local fr, fc = wrongCell(game)
+        tapCell(screen, fr, fc)
+        -- A cross on a square that belongs filled.
+        local cr, cc
+        for r = 1, p.h do
+            for c = 1, p.w do
+                if not cr and p:isFilled(r, c) then cr, cc = r, c end
+            end
+        end
+        tapRect(screen.toolbar.tools.segs[2])
+        tapCell(screen, cr, cc)
+        tapRect(screen.toolbar.check_btn.rect)
+        assert.are.equal("2 squares are wrong", screen.header.aside)
+        -- The heavy cross is black at the cell's center; the hatch leaves
+        -- white between its stripes, the heavy cross doesn't at the center.
+        local x, y = H.cellPoint(screen, cr, cc)
+        assert.are.equal(0, require("device").screen.bb:get(x, y))
+        clean()
+    end)
+
+    it("keeps the toolbar in place whether or not checking is on", function()
+        local off = playWith({})
+        local hint_off = off.toolbar.hint_btn.rect
+        local on = playWith({ mistakes = "request" })
+        assert.are.same(hint_off, on.toolbar.hint_btn.rect)
+        -- Undo and redo sit side by side.
+        local u, r = on.toolbar.undo_btn.rect, on.toolbar.redo_btn.rect
+        assert.are.equal(u.x + u.w, r.x)
     end)
 
     it("says so when there are no mistakes", function()
         local screen = playWith({ mistakes = "request" })
         tapRect(screen.toolbar.check_btn.rect)
-        assert.are.equal("No mistakes so far", screen.header.title)
+        assert.are.equal("No mistakes so far", screen.header.aside)
     end)
 
     it("turns a wrong fill into a marked cross at once when instant", function()

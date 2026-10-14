@@ -6,8 +6,10 @@ are cached in setGeometry(), and paint methods only draw.
 Changes are repainted cell by cell: paintChanges() redraws just the touched
 cells and clue strips and returns the rects that need refreshing.
 
-Mistake marks paint as a hatched cell; the line a hint points at gets its
-clues inverted (white on black), both legible without color.
+Mistake marks keep what was there: a wrong fill paints hatched, a wrong cross
+as a heavy black cross. The line a hint points at gets its clues inverted
+(white on black). A hairline in the clue area every 5 lines helps counting
+without putting gray numbers on a gray band. All legible without color.
 ]]
 
 local RenderText = require("ui/rendertext")
@@ -70,9 +72,9 @@ function BoardWidget:boardRect()
     return rect(b.x, b.y, b.w, b.h)
 end
 
--- Every other group of 5 lines gets a light band in the clue area.
-local function banded(k)
-    return math.floor((k - 1) / 5) % 2 == 1
+-- Lines 6, 11, ... start a new group of 5: their clue strip gets a divider.
+local function startsGroup(k)
+    return k > 1 and (k - 1) % 5 == 0
 end
 
 function BoardWidget:clueColor(done, focused)
@@ -85,17 +87,17 @@ function BoardWidget:focused(axis, k)
     return f ~= nil and f.axis == axis and f.index == k
 end
 
--- Clue strip background: black when hinted, else the banding.
-local function clueBackground(focused, k)
-    if focused then return Theme.BLACK end
-    return banded(k) and Theme.TINT or Theme.WHITE
+-- Clue strip background: black when hinted, else white.
+local function clueBackground(focused)
+    return focused and Theme.BLACK or Theme.WHITE
 end
 
 function BoardWidget:paintRowClues(bb, r)
     local g = self.geom
     local x, y, w, h = g:rowClueRect(r)
     local focused = self:focused("row", r)
-    bb:paintRect(x, y, w, h, clueBackground(focused, r))
+    bb:paintRect(x, y, w, h, clueBackground(focused))
+    if startsGroup(r) and not focused then bb:paintRect(x, y, w, Theme.line.hair, Theme.SECONDARY) end
     local clue, done = self.game.puzzle.row_clues[r], self.game.row_nums[r]
     local x_end = g.board.x + g.row_gutter
     local baseline = y + math.floor((h + self.cap_h) / 2)
@@ -113,7 +115,8 @@ function BoardWidget:paintColClues(bb, c)
     local g = self.geom
     local x, y, w, h = g:colClueRect(c)
     local focused = self:focused("col", c)
-    bb:paintRect(x, y, w, h, clueBackground(focused, c))
+    bb:paintRect(x, y, w, h, clueBackground(focused))
+    if startsGroup(c) and not focused then bb:paintRect(x, y, Theme.line.hair, h, Theme.SECONDARY) end
     local clue, done = self.game.puzzle.col_clues[c], self.game.col_nums[c]
     local sh = g.measure.slot_h
     local y_end = g.board.y + g.col_gutter
@@ -132,8 +135,11 @@ function BoardWidget:paintCell(bb, r, c)
     bb:paintRect(ix, iy, iw, ih, Theme.WHITE)
     local s = self.game:cell(r, c)
     local gl = self.glyphs
-    if self.game:mark(Grid.index(self.game.puzzle.w, r, c)) then
-        bb:blitFrom(gl.mistake, ix + math.floor((iw - gl.w) / 2), iy + math.floor((ih - gl.h) / 2),
+    local marked = self.game:mark(Grid.index(self.game.puzzle.w, r, c))
+    if marked then
+        -- A wrong fill stays recognisable as a fill, a wrong cross as a cross.
+        local glyph = s == Cell.CROSSED and gl.wrong_cross or gl.mistake
+        bb:blitFrom(glyph, ix + math.floor((iw - gl.w) / 2), iy + math.floor((ih - gl.h) / 2),
             0, 0, gl.w, gl.h)
     elseif s == Cell.FILLED then
         local gap = Theme.fill_gap

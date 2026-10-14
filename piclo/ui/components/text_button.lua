@@ -33,6 +33,16 @@ function TextButton:preferredWidth()
     return self.dark.w + 2 * pad
 end
 
+--[[
+The width every button gets, so pills look the same on every screen: five
+touch targets wide, wider only when the text needs it, narrower only when
+max_w (the room there is) is less.
+]]
+function TextButton:standardWidth(max_w)
+    local w = math.max(self:preferredWidth(), Theme.touch * 5)
+    return max_w and math.min(w, max_w) or w
+end
+
 --- Narrowest width that still keeps the text clear of the pill's ends.
 function TextButton:minWidth()
     return self.dark.w + 2 * Theme.space.s

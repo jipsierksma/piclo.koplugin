@@ -38,7 +38,11 @@ local function groups()
             { key = "highlight_done", label = _("Highlight completed clues"), switch = true,
                 notes = _("Finished numbers turn gray") },
             { key = "hold_action", label = _("Hold a square to"),
-                choices = { { "opposite", _("Use other tool") }, { "cross", _("Cross") } } },
+                choices = { { "opposite", _("Use other tool") }, { "cross", _("Cross") } },
+                notes = {
+                    opposite = _("Holding uses the tool that isn't selected"),
+                    cross = _("Holding always places a cross"),
+                } },
         } },
         { title = _("Display"), rows = {
             { key = "show_timer", label = _("Show timer in header"), switch = true,
@@ -126,7 +130,9 @@ function SettingsScreen:layoutRow(row, x, y, w)
     local note = self:noteFor(row)
     entry.note = note and self:label{ text = note, size = "caption", color = Theme.SECONDARY, max_width = w }
 
-    local pad = Theme.space.m
+    -- Tight enough to keep every setting on one page on a 6-7" screen; rows
+    -- stay at least a touch target tall (see below).
+    local pad = Theme.space.s
     local line_h = beside and math.max(title.h, ch or 0) or title.h
     entry.title_y = y + pad + math.floor((line_h - title.h) / 2)
     if ctrl and beside then ctrl:setRect(x + w - cw, y + pad + math.floor((line_h - ch) / 2), cw, ch) end

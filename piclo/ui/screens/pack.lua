@@ -2,8 +2,8 @@
 Pack screen, the collection: a grid of square tiles.
   solved       the finished picture, crisp at a whole-pixel scale, and its title
   revealed     the same, with the title in gray: seen with "Show solution", not earned
-  in progress  the board so far plus a small corner mark, "???" underneath
-  new          a hairline square with the puzzle number, "???" underneath
+  in progress  the board so far plus a small corner mark, its number underneath
+  new          a hairline square with "???" inside, its number underneath
 Pages with swipes and the page-turn keys when the tiles don't fit one screen.
 
 Right after a solve (opts.marked) the new picture gets a heavy frame and the
@@ -65,7 +65,7 @@ function PackScreen:layout(dimen)
     local t = Theme.touch
     if self.next_btn then
         local b = self.next_btn
-        local bw = math.min(area.w, math.max(b:preferredWidth(), t * 5))
+        local bw = b:standardWidth(area.w)
         b:setRect(math.floor((W - bw) / 2), H - Theme.space.l - t, bw, t)
         area.h = area.h - t - Theme.space.l
         bottom = b.rect.y - Theme.space.s
@@ -106,14 +106,14 @@ function PackScreen:layout(dimen)
             shown = shown,
             cells = (not shown) and progress:board(p) or nil,
             caption = self:label{
-                text = shown and p.title or _("???"),
+                text = shown and p.title or tostring(p.number),
                 size = "caption",
                 color = solved and Theme.BLACK or Theme.SECONDARY,
                 max_width = rect.w,
             },
         }
         if not shown and not tile.cells then
-            tile.number = self:label{ text = tostring(p.number), role = "title", color = Theme.SECONDARY }
+            tile.unknown = self:label{ text = _("???"), role = "title", color = Theme.SECONDARY }
         end
         self.tiles[#self.tiles + 1] = tile
     end
@@ -148,7 +148,7 @@ function PackScreen:paintTile(bb, tile)
             local mk = Theme.mark
             bb:paintRect(r.x + r.w - mk - Theme.space.xs, r.y + Theme.space.xs, mk, mk, Theme.BLACK)
         else
-            tile.number:paintIn(bb, r, "center")
+            tile.unknown:paintIn(bb, r, "center")
         end
     end
     tile.caption:paintIn(bb, tile.caption_rect, "center")

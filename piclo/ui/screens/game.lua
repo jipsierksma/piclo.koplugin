@@ -113,7 +113,7 @@ function GameScreen:repaint(report, extra)
     local header = self.notice
     if header then
         self.notice = nil
-        self.header:setTitle(self.title)
+        self.header:setAside(self:timerText())
         rects[#rects + 1] = self.header.rect
     end
     if #rects == 0 then return end
@@ -139,10 +139,13 @@ function GameScreen:apply(report, extra)
     end
 end
 
---- Shows a short message in place of the header title until the next move.
+--[[
+Shows a short message on the right of the header, in the timer's place and
+style, until the next move; the title stays.
+]]
 function GameScreen:say(text)
     self.notice = true
-    self.header:setTitle(text)
+    self.header:setAside(text)
     Refresh.regions(self.window, "ui", { self.header.rect }, function(bb) self.header:paint(bb) end)
 end
 
@@ -194,6 +197,8 @@ end
 
 function GameScreen:onTick()
     if self.game.solved then return end
+    -- A message is showing in the timer's place; the next move brings it back.
+    if self.notice then return self:scheduleTick() end
     local text = self:timerText()
     if text ~= self.header.aside then
         local window = self.window

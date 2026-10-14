@@ -5,8 +5,15 @@ equal tone in a row become one rect, so even a large reveal is cheap.
 
 Tones are compared as plain numbers and only turned into colors to paint:
 KOReader's colors are FFI structs whose == breaks when one side is nil.
+
+In night mode KOReader inverts the whole screen, which would show a drawing
+as its negative. Finished pictures are therefore painted on white and
+inverted once more, as KOReader does for images in books, so they keep their
+real tones, with a narrow white border so black edges don't melt into the
+dark screen. Boards in play stay as they are, like the board itself.
 ]]
 
+local Device = require("device")
 local Cell = require("piclo/model/cell")
 local Layout = require("piclo/ui/layout")
 local Theme = require("piclo/ui/theme")
@@ -33,6 +40,10 @@ function Picture.paint(bb, puzzle, box, opts)
     local scale, ox, oy = Layout.fitPicture(w, h, box.w, box.h)
     if scale < 1 then return nil end
     local x0, y0 = box.x + ox, box.y + oy
+    local original = Device.screen.night_mode and not opts.cells
+    -- Less than a tile's inner margin, so the border never covers a tile frame.
+    local pad = Theme.space.xs
+    if original then bb:paintRect(x0 - pad, y0 - pad, w * scale + 2 * pad, h * scale + 2 * pad, Theme.WHITE) end
     for r = 1, h do
         local y = y0 + (r - 1) * scale
         local c = 1
@@ -48,6 +59,7 @@ function Picture.paint(bb, puzzle, box, opts)
             c = c + run
         end
     end
+    if original then bb:invertRect(x0 - pad, y0 - pad, w * scale + 2 * pad, h * scale + 2 * pad) end
     return { x = x0, y = y0, w = w * scale, h = h * scale }, scale
 end
 

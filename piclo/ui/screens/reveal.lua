@@ -12,7 +12,8 @@ landscape. If the title doesn't fit above, landscape stacks it beside too. Only 
 grid does a general layout take over.
 
 After a solve there is one action, back to the collection, where the new
-picture is marked and "Next puzzle" waits.
+picture is marked and "Next puzzle" waits. Under the time a line says how
+far the pack is ("4 of 10 in In the Woods"), when there is room for it.
 ]]
 
 local T = require("ffi/util").template
@@ -75,6 +76,15 @@ function RevealScreen:free()
     for __, b in ipairs(self.buttons) do b:free() end
 end
 
+--- "4 of 10 in In the Woods" after a solve (also a revealed one); nil when viewing.
+function RevealScreen:progressText()
+    if self.data.mode == "view" then return nil end
+    local catalog = self.app:catalog()
+    local pack = catalog:pack(self.data.puzzle.pack_id)
+    local info = self.app:collection():packInfo(pack)
+    return T(_("%1 of %2 in %3"), info.solved, info.total, pack.title)
+end
+
 function RevealScreen:label(opts)
     local l = Label.new(opts)
     self.labels[#self.labels + 1] = l
@@ -90,6 +100,8 @@ function RevealScreen:makeLabels(col_w, title_w)
     title_w = title_w or col_w
     self.title = self:label{ text = p.title, role = "title", size = "display", max_width = title_w }
     self.summary = self:label{ text = RevealScreen.summary(self.data), color = Theme.SECONDARY, max_width = title_w }
+    local progress = self:progressText()
+    self.progress = progress and self:label{ text = progress, color = Theme.SECONDARY, max_width = title_w }
     self.unlocked = {}
     for __, title in ipairs(self.data.unlocked or {}) do self:addUnlockLines(title, col_w) end
 end
@@ -126,12 +138,26 @@ local function centerOn(cx, w, W, m)
 end
 
 function RevealScreen:buttonWidth(b, max_w)
-    return math.min(max_w, math.max(b:preferredWidth(), Theme.touch * 4))
+    return b:standardWidth(max_w)
 end
 
 --[[
-Stacks title, time, buttons and unlock lines centered on cx from y; returns
-the height. measure_only just returns the height.
+The lines above the picture: title, time and, when it fits in max_h too,
+the pack progress. Returns them and their height.
+]]
+function RevealScreen:aboveLines(max_h)
+    local lines = { self.title, self.summary }
+    local h = self.title.h + self.summary.h
+    if self.progress and h + self.progress.h <= max_h then
+        lines[3] = self.progress
+        h = h + self.progress.h
+    end
+    return lines, h
+end
+
+--[[
+Stacks title, time, pack progress, buttons and unlock lines centered on cx
+from y; returns the height. measure_only just returns the height.
 ]]
 function RevealScreen:layoutColumn(cx, y, col_w, measure_only)
     local h, pos = 0, {}
@@ -141,6 +167,7 @@ function RevealScreen:layoutColumn(cx, y, col_w, measure_only)
     end
     text(self.title)
     text(self.summary)
+    if self.progress then text(self.progress) end
     h = h + Theme.space.xxl
     for __, b in ipairs(self.buttons) do
         local w = self:buttonWidth(b, col_w)
@@ -165,7 +192,7 @@ follows it reads as off-center. False when it doesn't fit.
 function RevealScreen:layoutAround(W, H, pic)
     local m = Theme.space.xl
     self:makeLabels(W - 2 * m)
-    local above_h = self.title.h + self.summary.h
+    local above, above_h = self:aboveLines(pic.y - 2 * m)
     if above_h > pic.y - 2 * m then return false end
 
     local widths, row_w = {}, 0
@@ -183,7 +210,7 @@ function RevealScreen:layoutAround(W, H, pic)
     local cx = math.floor(W / 2)
     self.text_pos = {}
     local ty = math.floor((pic.y - above_h) / 2)
-    for __, l in ipairs({ self.title, self.summary }) do
+    for __, l in ipairs(above) do
         self.text_pos[#self.text_pos + 1] = { item = l, x = centerOn(cx, l.w, W, m), y = ty }
         ty = ty + l.h
     end
@@ -237,13 +264,13 @@ picture's middle. False when the title doesn't fit the band.
 function RevealScreen:layoutTitleAbove(W, H, pic, zone_x, zone_w, col_w)
     local m = Theme.space.xl
     self:makeLabels(col_w, W - 2 * m)
-    local above_h = self.title.h + self.summary.h
+    local above, above_h = self:aboveLines(pic.y - 2 * m)
     if self.title.truncated or above_h > pic.y - 2 * m then return false end
 
     local cx = pic.x + math.floor(pic.w / 2)
     self.text_pos = {}
     local ty = math.floor((pic.y - above_h) / 2)
-    for __, l in ipairs({ self.title, self.summary }) do
+    for __, l in ipairs(above) do
         self.text_pos[#self.text_pos + 1] = { item = l, x = centerOn(cx, l.w, W, m), y = ty }
         ty = ty + l.h
     end

@@ -293,3 +293,57 @@ describe("longer translations", function()
         end)
     end
 end)
+
+describe("the longest clues", function()
+    -- 15x15 with 8 numbers in every odd row and column: as long as clues get.
+    local function worstCase()
+        local Puzzle = require("piclo/model/puzzle")
+        local rows = {}
+        for r = 1, 15 do rows[r] = r % 2 == 1 and "#.#.#.#.#.#.#.#" or "..............." end
+        local p = assert(Puzzle.new({ id = "woods/worst", rows = rows }))
+        p.pack_id, p.number, p.title = "woods", 99, "Worst case"
+        return p
+    end
+
+    local sizes = { { 1264, 1680 }, { 1680, 1264 }, { 1072, 1448 }, { 758, 1024 }, { 600, 800 }, { 800, 600 } }
+    for _, size in ipairs(sizes) do
+        it("fit beside and above the grid at " .. size[1] .. "x" .. size[2], function()
+            local _, app = H.launch(size[1], size[2])
+            app:back()
+            local p = worstCase()
+            assert.are.equal(8, #p.row_clues[1])
+            app:openPuzzle(p)
+            local g = H.host.screen.board.geom
+            assert.is_not_nil(g)
+            -- The clue gutters hold all 8 numbers inside the screen.
+            assert.is_true(g.board.x >= 0 and g.board.y >= 0)
+            assert.is_true(g.grid_x + g.cols * g.cell <= size[1])
+            assert.is_true(g.grid_y + g.rows * g.cell <= size[2])
+            shot("worst_clues_" .. size[1] .. "x" .. size[2])
+            clean()
+        end)
+    end
+end)
+
+describe("night mode", function()
+    it("paints finished drawings pre-inverted, on white, so they keep their tones", function()
+        local Picture = require("piclo/ui/picture")
+        local BB = require("ffi/blitbuffer")
+        local Puzzle = require("piclo/model/puzzle")
+        local p = assert(Puzzle.new({ id = "x/dot", rows = { "#.", ".." } }))
+        local bb = BB.new(20, 20)
+        Screen.night_mode = true
+        local ok, err = pcall(function()
+            Picture.paint(bb, p, { x = 0, y = 0, w = 20, h = 20 })
+            -- KOReader inverts the screen once more: black shows black, the
+            -- empty part of the picture white, as in day mode.
+            assert.are.equal(0xFF, bb:get(2, 2))
+            assert.are.equal(0x00, bb:get(15, 15))
+            -- A board in play is left as it is.
+            Picture.paint(bb, p, { x = 0, y = 0, w = 20, h = 20 }, { cells = { 1, 0, 0, 0 } })
+            assert.are.equal(0x00, bb:get(2, 2))
+        end)
+        Screen.night_mode = nil
+        assert(ok, err)
+    end)
+end)
