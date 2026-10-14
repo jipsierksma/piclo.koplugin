@@ -10,6 +10,9 @@ picture. The title and time go in the band above it (where the header and
 column clues were); the actions go below it in portrait and beside it in
 landscape. If the title doesn't fit above, landscape stacks it beside too. Only when the text can't fit around the
 grid does a general layout take over.
+
+After a solve there is one action, back to the collection, where the new
+picture is marked and "Next puzzle" waits.
 ]]
 
 local T = require("ffi/util").template
@@ -55,15 +58,14 @@ function RevealScreen.new(opts)
     if data.mode == "view" then
         self.primary = TextButton.new{ text = _("Play again"), primary = true,
             on_tap = function() app:playAgain(p) end }
-    elseif data.next then
-        self.primary = TextButton.new{ text = _("Next puzzle"), primary = true,
-            on_tap = function() app:playNext(data.next) end }
+        self.secondary = TextButton.new{ text = _("Back to collection"),
+            on_tap = function() app:backToCollection(p.pack_id) end }
+        self.buttons = { self.primary, self.secondary }
+    else
+        self.primary = TextButton.new{ text = _("Back to collection"), primary = true,
+            on_tap = function() app:backToCollection(p.pack_id, { marked = p.id, next = data.next }) end }
+        self.buttons = { self.primary }
     end
-    self.secondary = TextButton.new{ text = _("Back to collection"),
-        on_tap = function() app:backToCollection(p.pack_id) end }
-    self.buttons = {}
-    if self.primary then self.buttons[1] = self.primary end
-    self.buttons[#self.buttons + 1] = self.secondary
     return self
 end
 

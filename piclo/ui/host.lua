@@ -2,7 +2,8 @@
 The plugin's single full-screen window. Screens swap inside it, so KOReader
 sees one widget and lifecycle events land in one place:
 
-  gestures          forwarded to the current screen, or to an open sheet
+  gestures          forwarded to the current screen, or to an open sheet;
+                    taps right after a screen change are dropped (TAP_GUARD)
   Back key          closes an open sheet, else app:back(); page-turn keys
                     go to the screen
   Suspend/Resume    app pauses and resumes the timer
@@ -15,6 +16,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local UIManager = require("ui/uimanager")
+local time = require("ui/time")
 local Refresh = require("piclo/ui/refresh")
 local Theme = require("piclo/ui/theme")
 
@@ -27,6 +29,13 @@ local Host = InputContainer:extend{
     screen = nil,
     sheet = nil,
 }
+
+--[[
+Seconds after a screen or sheet change in which taps are dropped. E-ink is
+slow to show the new screen, so people tap twice; without this the second
+tap lands on whatever the first one opened.
+]]
+Host.TAP_GUARD = 0.35
 
 local GESTURES = {
     Tap = "tap",
@@ -57,6 +66,7 @@ Shows `screen` in the window with a flashing transition; refresh = "full"
 asks for the stronger full flash (used by the reveal).
 ]]
 function Host:setScreen(screen, refresh)
+    self:guard()
     self:closeSheet(false)
     if self.screen and self.screen ~= screen and self.screen.free then
         self.screen:free()
@@ -84,6 +94,7 @@ end
 
 --- Opens a sheet over the screen, replacing any open one.
 function Host:showSheet(sheet)
+    self:guard()
     local old = self.sheet
     sheet.window = self
     sheet:layout(self.dimen)
@@ -113,11 +124,22 @@ function Host:relayout()
     UIManager:setDirty(self, "full")
 end
 
+--- Starts the tap guard (see TAP_GUARD).
+function Host:guard()
+    self.guard_until = time.to_s(time.now()) + Host.TAP_GUARD
+end
+
+function Host:guarded()
+    return self.guard_until ~= nil and time.to_s(time.now()) < self.guard_until
+end
+
 -- Gestures: the screen decides (or an open sheet, which only takes taps);
 -- we always consume them so nothing leaks to the reader or file browser
 -- underneath.
 local function forward(method)
     return function(self, _, ges)
+        if method == "onTap" and self:guarded() then return true end
+        self.app:onInput()
         if self.sheet then
             if method == "onTap" then self.sheet:onTap(ges) end
             return true

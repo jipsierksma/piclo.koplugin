@@ -1,8 +1,9 @@
 --[[
-A tappable list row, as on the title screen and the Packs screen: a bold
-title (gray when dimmed, with a check mark after it when done), an optional
-gray line under it, an optional progress bar, a chevron or a lock on the
-right, and a hairline divider underneath.
+A tappable list row, as on the title screen and the Packs screen: a title
+(bold, or regular when light; gray when dimmed; with a check mark after it
+when done), an optional gray line under it or gray text on the right, an
+optional progress bar, a chevron or a lock on the right (or nothing, for an
+action that doesn't open a screen), and a hairline divider underneath.
 ]]
 
 local Icons = require("piclo/ui/icons")
@@ -13,8 +14,10 @@ local ListRow = {}
 ListRow.__index = ListRow
 
 --[[
-opts: rect {x, y, w, h}, title, sub (optional), dimmed, done, locked,
-progress (0..1, optional: draws the bar)
+opts: rect {x, y, w, h}, title, sub (optional line under the title), aside
+(optional text on the right), light (regular weight), dimmed, done, locked,
+progress (0..1, optional: draws the bar), chevron (default true), divider
+(default true)
 ]]
 function ListRow.new(opts)
     local self = setmetatable({
@@ -22,12 +25,19 @@ function ListRow.new(opts)
         done = opts.done,
         locked = opts.locked,
         progress = opts.progress,
+        chevron = opts.chevron ~= false,
+        divider = opts.divider ~= false,
     }, ListRow)
     local m = Theme.space.xl
-    self.text_w = opts.rect.w - 2 * m - Theme.touch
+    local trailing = (self.chevron or self.locked) and Theme.touch or 0
+    self.text_w = opts.rect.w - 2 * m - trailing
+    if opts.aside then
+        self.aside = Label.new{ text = opts.aside, color = Theme.SECONDARY, max_width = math.floor(self.text_w / 2) }
+        self.text_w = self.text_w - self.aside.w - Theme.space.l
+    end
     -- A done row keeps room for the check mark after its title.
     local title_w = opts.done and (self.text_w - Theme.space.xs - Theme.icon) or self.text_w
-    self.title = Label.new{ text = opts.title, role = "title", max_width = title_w,
+    self.title = Label.new{ text = opts.title, role = opts.light and "body" or "title", max_width = title_w,
         color = opts.dimmed and Theme.SECONDARY or Theme.BLACK }
     if opts.sub then
         self.sub = Label.new{ text = opts.sub, color = Theme.SECONDARY, max_width = self.text_w }
@@ -38,6 +48,7 @@ end
 function ListRow:free()
     self.title:free()
     if self.sub then self.sub:free() end
+    if self.aside then self.aside:free() end
 end
 
 function ListRow:contains(x, y)
@@ -68,9 +79,18 @@ function ListRow:paint(bb)
         bb:paintRect(x, y, bw, bar_h, Theme.TINT)
         bb:paintRect(x, y, math.floor(bw * self.progress), bar_h, Theme.BLACK)
     end
-    Icons.paint(bb, self.locked and "lock" or "chevron", Theme.icon, self.locked and "disabled" or "normal",
-        { x = r.x + r.w - m - Theme.touch, y = r.y, w = Theme.touch, h = r.h })
-    bb:paintRect(x, r.y + r.h - 1, r.w - 2 * m, Theme.line.hair, Theme.BLACK)
+    local right = r.x + r.w - m
+    if self.locked or self.chevron then
+        right = right - Theme.touch
+        Icons.paint(bb, self.locked and "lock" or "chevron", Theme.icon, self.locked and "disabled" or "normal",
+            { x = right, y = r.y, w = Theme.touch, h = r.h })
+    end
+    if self.aside then
+        self.aside:paintIn(bb, { x = right - self.aside.w, y = r.y, w = self.aside.w, h = r.h }, "left")
+    end
+    if self.divider then
+        bb:paintRect(x, r.y + r.h - 1, r.w - 2 * m, Theme.line.hair, Theme.BLACK)
+    end
 end
 
 --- Inverts the row for press feedback.
