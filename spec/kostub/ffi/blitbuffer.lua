@@ -19,6 +19,7 @@ local Color8 = ffi.metatype("PicloStubColor8", {
 BB.Color8 = Color8
 BB.COLOR_WHITE = Color8(0xFF)
 BB.COLOR_GRAY_E = Color8(0xEE)
+BB.COLOR_GRAY_D = Color8(0xDD)
 BB.COLOR_GRAY_6 = Color8(0x66)
 BB.COLOR_BLACK = Color8(0x00)
 BB.TYPE_BB8 = 1

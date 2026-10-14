@@ -22,13 +22,15 @@ local function openPacks()
 end
 
 describe("title screen", function()
-    it("starts with just a Play button and a light menu", function()
+    it("starts with the first pack in the card and a light menu", function()
         launch()
         app:back()
         local home = host.screen
         assert.are.equal("start", home.spot.kind)
-        assert.are.equal("Play", home.primary.text)
-        assert.is_nil(home.thumb)
+        assert.are.equal("Start", home.primary.text)
+        assert.are.equal("First Steps", home.card_title.widget.text)
+        assert.are.equal("8 pictures to discover", home.card_sub.widget.text)
+        assert.is_not_nil(home.thumb)
         assert.is_nil(home.header)
         assert.are.equal("0 of 30 solved", home.packs_row.aside.widget.text)
         assert.are.equal(4, #home.rows)
@@ -49,7 +51,15 @@ describe("title screen", function()
         assert.are.equal("Play", home.primary.text)
         assert.are.equal("First Steps · 2", home.card_title.widget.text)
         assert.are.equal("5×5 · New", home.card_sub.widget.text)
-        assert.are.equal("2", home.number.widget.text)
+        -- A faint empty 5x5 grid in the card: its lines are gray, its cells white.
+        H.settle()
+        local th = home.thumb
+        local found = false
+        for x = th.x + 1, th.x + th.w - 2 do
+            local v = require("device").screen.bb:get(x, th.y + math.floor(th.h / 2))
+            if v == 0xDD then found = true end
+        end
+        assert.is_true(found, "faint grid lines in the card")
         shot("home_play")
         clean()
         tapRect(home.thumb)
@@ -57,7 +67,7 @@ describe("title screen", function()
         assert.are.equal(app:catalog().packs[1].puzzles[2], app.game.puzzle)
     end)
 
-    it("shows the latest picture and opens Packs when everything is solved", function()
+    it("shows the latest picture when everything is solved, with Packs only once", function()
         launch()
         app:back()
         local clock = 0
@@ -71,10 +81,10 @@ describe("title screen", function()
         local home = host.screen
         assert.are.equal("done", home.spot.kind)
         assert.are.equal(starter, home.spot.puzzle)
-        assert.are.equal("Packs", home.primary.text)
+        assert.is_nil(home.primary)
         shot("home_done")
         clean()
-        tapRect(home.primary.rect)
+        tapRect(home.packs_row.rect)
         assert.are.equal("packs", top())
         for __, row in ipairs(host.screen.rows) do assert.is_true(row.done) end
         assert.are.equal("30 of 30 solved", host.screen.summary.widget.text)

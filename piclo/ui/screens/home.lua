@@ -1,12 +1,16 @@
 --[[
-Title screen: the logo, the puzzle to go on with, and a light menu (Packs,
-How to play, Settings, Close; light rows between hairlines). No header bar: Close and the back key leave.
+Title screen: the logo, a card for what to play, and a light menu (Packs,
+How to play, Settings, Close; light rows between hairlines). No header bar:
+Close and the back key leave.
 
-What goes under the logo depends on Collection:spotlight():
-  start      nothing played yet: just a big Play pill
-  continue   a card: the board so far, "In the Woods · 5", "15×15 · 4:12", Continue
-  play       a card: an empty numbered tile, "First Steps · 1", "5×5 · New", Play
-  done       a card: the latest solved picture, a closing line, Packs
+The card is the same in every state; what's on it depends on
+Collection:spotlight():
+  start      nothing played yet: a faint empty grid of the first puzzle,
+             "First Steps", "8 pictures to discover", Start (opens that puzzle)
+  continue   a card: the board so far, "In the Woods · 5", "15×15 · 4:12 played", Continue
+  play       a card: a faint empty grid of the puzzle's size, "First Steps · 2", "5×5 · New", Play
+  done       a card: the latest solved picture and a closing line; no pill, as the
+             Packs row right below is the way on
 
 The free height is shared evenly around logo, card and menu, so neither end
 of the screen gets heavy. Landscape puts logo and card on the left and the
@@ -17,8 +21,10 @@ local IconWidget = require("ui/widget/iconwidget")
 local T = require("ffi/util").template
 local _ = require("gettext")
 local Format = require("piclo/util/format")
+local N_ = _.ngettext
 local Icons = require("piclo/ui/icons")
 local Label = require("piclo/ui/components/label")
+local Layout = require("piclo/ui/layout")
 local ListRow = require("piclo/ui/components/list_row")
 local Picture = require("piclo/ui/picture")
 local Refresh = require("piclo/ui/refresh")
@@ -39,11 +45,11 @@ function HomeScreen.new(opts)
     local self = setmetatable({ app = app, labels = {}, rows = {} }, HomeScreen)
     self.spot = app:collection():spotlight()
     local spot = self.spot
-    local pill = { start = _("Play"), continue = _("Continue"), play = _("Play"), done = _("Packs") }
-    self.primary = TextButton.new{ text = pill[spot.kind], primary = true, on_tap = function()
-        if spot.kind == "done" then return app:showPacks() end
-        app:openPuzzle(spot.puzzle)
-    end }
+    local pill = { start = _("Start"), continue = _("Continue"), play = _("Play") }
+    if pill[spot.kind] then
+        self.primary = TextButton.new{ text = pill[spot.kind], primary = true,
+            on_tap = function() app:openPuzzle(spot.puzzle) end }
+    end
     self.menu = {
         { key = "packs_row", title = _("Packs"), on_tap = function() app:showPacks() end },
         { key = "help_row", title = _("How to play"), on_tap = function() app:showHelp() end },
@@ -67,7 +73,7 @@ end
 
 function HomeScreen:free()
     self:freeLayout()
-    self.primary:free()
+    if self.primary then self.primary:free() end
 end
 
 function HomeScreen:label(opts)
@@ -113,10 +119,16 @@ function HomeScreen:cardText()
         return _("Every picture found"), _("Play them again from Packs")
     end
     local p = spot.puzzle
+    if spot.kind == "start" then
+        local pack = self.app:catalog():pack(p.pack_id)
+        local n = #pack.puzzles
+        return pack.title, T(N_("1 picture to discover", "%1 pictures to discover", n), n)
+    end
     -- e.g. "In the Woods · 5"
     local title = T(_("%1 · %2"), self.app:catalog():pack(p.pack_id).title, p.number)
     if spot.kind == "continue" then
-        return title, T(_("%1 · %2"), sizeText(p), Format.duration(spot.elapsed))
+        -- e.g. "15×15 · 4:12 played": a bare 4:12 could read as the time of day
+        return title, T(_("%1 · %2 played"), sizeText(p), Format.duration(spot.elapsed))
     end
     return title, T(_("%1 · New"), sizeText(p))
 end
@@ -134,15 +146,6 @@ function HomeScreen:logoBlock(x, w, max_h)
     return { h = h, place = function(y) logo.y = y end }
 end
 
---- A block for the big Play pill of a fresh start, centered in [x, x + w).
-function HomeScreen:startBlock(x, w)
-    local t = Theme.touch
-    local pw = math.min(w - 2 * Theme.space.xl, math.max(self.primary:preferredWidth(), t * 6))
-    return { h = t, place = function(y)
-        self.primary:setRect(x + math.floor((w - pw) / 2), y, pw, t)
-    end }
-end
-
 --[[
 A block for the card in [x, x + w): a thumb x thumb thumbnail with the text
 and pill beside it, centered on it.
@@ -154,18 +157,17 @@ function HomeScreen:cardBlock(x, w, thumb)
     local title, sub = self:cardText()
     self.card_title = self:label{ text = title, role = "title", max_width = text_w }
     self.card_sub = self:label{ text = sub, color = Theme.SECONDARY, max_width = text_w }
-    if self.spot.kind == "play" then
-        self.number = self:label{ text = tostring(self.spot.puzzle.number), role = "title", size = "display",
-            color = Theme.SECONDARY }
-    end
     local t = Theme.touch
-    local block = self.card_title.h + self.card_sub.h + Theme.space.l + t
-    local pw = math.min(text_w, math.max(self.primary:preferredWidth(), t * 4))
+    local pill = self.primary and (Theme.space.l + t) or 0
+    local block = self.card_title.h + self.card_sub.h + pill
     return { h = thumb, place = function(y)
         self.thumb = { x = x + m, y = y, w = thumb, h = thumb }
         local ty = y + math.floor((thumb - block) / 2)
         self.card_text = { x = text_x, y = ty }
-        self.primary:setRect(text_x, ty + self.card_title.h + self.card_sub.h + Theme.space.l, pw, t)
+        if self.primary then
+            self.primary:setRect(text_x, ty + self.card_title.h + self.card_sub.h + Theme.space.l,
+                self.primary:standardWidth(text_w), t)
+        end
     end }
 end
 
@@ -190,11 +192,10 @@ function HomeScreen:menuBlock(x, w)
 end
 
 --[[
-The block under the logo, sized for the height left over (room): the big
-pill on a fresh start, else the card. nil when a card wouldn't fit.
+The card under the logo, sized for the height left over (room); nil when it
+wouldn't fit.
 ]]
 function HomeScreen:heroBlock(x, w, room)
-    if self.spot.kind == "start" then return self:startBlock(x, w) end
     local thumb = math.min(math.floor((w - 2 * Theme.space.xl) * THUMB_SHARE), room)
     if thumb < 2 * Theme.touch then return nil end
     return self:cardBlock(x, w, thumb)
@@ -238,15 +239,26 @@ function HomeScreen:layout(dimen)
     end
 end
 
+--- A faint empty grid of the puzzle's size, the board waiting to be played.
+function HomeScreen:paintEmptyGrid(bb, p, box)
+    local cell, ox, oy = Layout.fitPicture(p.w, p.h, box.w, box.h)
+    if cell < 2 then return end
+    local x0, y0, hair = box.x + ox, box.y + oy, Theme.line.hair
+    for k = 0, p.w do bb:paintRect(x0 + k * cell, y0, hair, p.h * cell, Theme.FAINT) end
+    for k = 0, p.h do bb:paintRect(x0, y0 + k * cell, p.w * cell, hair, Theme.FAINT) end
+end
+
 function HomeScreen:paintThumb(bb)
     local th, spot = self.thumb, self.spot
-    bb:paintBorder(th.x, th.y, th.w, th.h, Theme.line.regular, Theme.BLACK)
+    -- A thin frame: the heavy one means "just solved" in the collection.
+    bb:paintBorder(th.x, th.y, th.w, th.h, Theme.line.hair, Theme.BLACK)
     local g = Theme.space.m
     local inner = { x = th.x + g, y = th.y + g, w = th.w - 2 * g, h = th.h - 2 * g }
     if spot.kind == "continue" then
         Picture.paint(bb, spot.puzzle, inner, { cells = spot.cells })
-    elseif spot.kind == "play" then
-        self.number:paintIn(bb, th, "center")
+    elseif spot.kind == "play" or spot.kind == "start" then
+        -- The board you're about to open, still empty.
+        self:paintEmptyGrid(bb, spot.puzzle, inner)
     elseif spot.puzzle then
         Picture.paint(bb, spot.puzzle, inner)
     end
@@ -260,7 +272,7 @@ function HomeScreen:paint(bb)
         self.card_title:paint(bb, ct.x, ct.y)
         self.card_sub:paint(bb, ct.x, ct.y + self.card_title.h)
     end
-    self.primary:paint(bb)
+    if self.primary then self.primary:paint(bb) end
     -- A hairline above the menu too, so every row sits between two lines.
     local first = self.rows[1]
     if first then
@@ -273,7 +285,7 @@ end
 function HomeScreen:onTap(ges)
     local x, y = ges.pos.x, ges.pos.y
     local p = self.primary
-    if p:contains(x, y) or (self.thumb and inside(self.thumb, x, y)) then
+    if p and (p:contains(x, y) or (self.thumb and inside(self.thumb, x, y))) then
         Refresh.press(self.window, p.rect, function(bb) p:paint(bb, true) end)
         return p.on_tap()
     end

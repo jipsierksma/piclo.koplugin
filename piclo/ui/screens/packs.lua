@@ -79,8 +79,8 @@ function PacksScreen:layout(dimen)
     self.header:layout(0, 0, W)
     local collection = self.app:collection()
     local solved, total = collection:totals()
-    self.summary = self:label{ text = T(_("%1 of %2 solved"), solved, total), size = "caption",
-        color = Theme.SECONDARY }
+    -- Same size as the same count beside Packs on the title screen.
+    self.summary = self:label{ text = T(_("%1 of %2 solved"), solved, total), color = Theme.SECONDARY }
     self.summary_y = Theme.header_h + Theme.space.l
     local top = self.summary_y + self.summary.h + Theme.space.xs
     local bottom = H - Theme.space.s

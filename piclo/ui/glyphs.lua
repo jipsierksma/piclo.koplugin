@@ -1,6 +1,7 @@
 --[[
 Small per-layout bitmaps for cell contents that Blitbuffer can't draw
-directly (it has no line primitive): the cross and the mistake hatch.
+directly (it has no line primitive): the cross, the mistake hatch for a
+wrong fill and the heavy black cross for a wrong cross.
 Built once for the current cell size and blitted into each cell, so
 paintTo never computes geometry per cell.
 ]]
@@ -37,6 +38,13 @@ function Glyphs.new(w, h)
     diagonal(cross, x0, y0, n, t, Theme.SECONDARY, true)
     self.cross = cross
 
+    -- Wrong cross: the same X in black and three times as thick.
+    local wrong = Blitbuffer.new(w, h, Blitbuffer.TYPE_BB8)
+    wrong:fill(Theme.WHITE)
+    diagonal(wrong, x0, y0, n, t * 3, Theme.BLACK, false)
+    diagonal(wrong, x0, y0, n, t * 3, Theme.BLACK, true)
+    self.wrong_cross = wrong
+
     -- Mistake: a hatched fill, readable without color.
     local gap = Theme.fill_gap
     local mistake = Blitbuffer.new(w, h, Blitbuffer.TYPE_BB8)
@@ -49,6 +57,7 @@ end
 
 function Glyphs:free()
     self.cross:free()
+    self.wrong_cross:free()
     self.mistake:free()
 end
 

@@ -54,7 +54,7 @@ describe("launching", function()
         assert.is_not_nil(host.screen.header.back)
         assert.is_nil(host.screen.done_btn)
         tapRect(host.screen.header.back.rect)
-        assert.are.equal("Play", host.screen.primary.text)
+        assert.are.equal("Start", host.screen.primary.text)
         shot("home_first_run")
         clean()
     end)
@@ -134,6 +134,9 @@ describe("collection", function()
         local screen = host.screen
         assert.are.equal(1, screen.grid.pages)
         assert.are.equal(8, #screen.tiles)
+        -- Unplayed tiles: "???" in the box, the number underneath.
+        assert.are.equal("3", screen.tiles[3].caption.widget.text)
+        assert.are.equal("???", screen.tiles[3].unknown.widget.text)
         shot("pack_new")
         clean()
         tapRect(screen.tiles[3].rect)
@@ -216,6 +219,13 @@ describe("solving", function()
         assert.are.equal(game.puzzle.title, reveal.title.widget.text)
         assert.truthy(reveal.summary.widget.text:find("Solved in"))
         assert.are.equal("Back to collection", reveal.primary.text)
+        -- How far the pack is, under the time.
+        assert.are.equal("1 of 8 in First Steps", reveal.progress.widget.text)
+        local shown = false
+        for _, pos in ipairs(reveal.text_pos) do
+            if pos.item == reveal.progress then shown = true end
+        end
+        assert.is_true(shown)
         shot("reveal_portrait")
         clean()
         assert.is_true(app:progress():isSolved(game.puzzle.id))

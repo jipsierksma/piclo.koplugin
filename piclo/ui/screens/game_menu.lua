@@ -50,6 +50,11 @@ function GameMenu.open(screen)
         items = {
             { text = _("Restart puzzle"), on_tap = function() GameMenu.confirmRestart(screen) end },
             { text = _("Show solution"), on_tap = function() GameMenu.confirmReveal(screen) end },
+            -- People get stuck mid-puzzle, so the rules are one tap away here too.
+            { text = _("How to play"), on_tap = function()
+                window:closeSheet(false)
+                screen.app:showHelp()
+            end },
             { text = _("Settings"), on_tap = function()
                 window:closeSheet(false)
                 screen.app:showSettings()

@@ -114,7 +114,9 @@ function Sheet:layout(dimen)
         local x = r.x + r.w - pad
         for k = #self.buttons, 1, -1 do
             local b = self.buttons[k]
-            local bw = math.max(b:preferredWidth(), Theme.touch * 2)
+            -- The action pill has the standard width; Cancel just its text.
+            local bw = b.primary and b:standardWidth(math.floor(r.w / 2))
+                or math.max(b:preferredWidth(), Theme.touch * 2)
             x = x - bw
             b:setRect(x, r.y + self.buttons_y, bw, Theme.touch)
             x = x - Theme.space.s

@@ -1,8 +1,12 @@
 --[[
-The game toolbar: the Fill/Cross segmented control, Undo, Redo, Hint and,
-when mistake checking is "on request", Check. A bar along the bottom in
-portrait, a rail beside the board in landscape, with its items spaced
-evenly and a hairline on the side facing the board.
+The game toolbar: the Fill/Cross segmented control, Undo and Redo side by
+side, Hint and, when mistake checking is "on request", Check. A bar along
+the bottom in portrait, a rail beside the board in landscape, with a
+hairline on the side facing the board.
+
+Four fixed slots, spaced evenly: tools, undo/redo, hint, check. The check
+slot stays empty when checking is off, so nothing moves when it's turned
+on and buttons are always where the player learned them.
 ]]
 
 local Game = require("piclo/game")
@@ -31,7 +35,8 @@ function Toolbar.new(opts)
     self.hint_btn = IconButton.new{ icon = "hint", on_tap = on.hint }
     self.buttons = { self.undo_btn, self.redo_btn, self.hint_btn }
     if opts.with_check then
-        self.check_btn = IconButton.new{ icon = "check", on_tap = on.check }
+        -- A magnifier, "look over my work": a check mark would read as "done".
+        self.check_btn = IconButton.new{ icon = "inspect", on_tap = on.check }
         self.buttons[#self.buttons + 1] = self.check_btn
     end
     self:sync()
@@ -54,20 +59,30 @@ end
 function Toolbar:layout(rect, landscape, rail_side)
     self.rect, self.landscape, self.rail_side = rect, landscape, rail_side
     local t = Theme.touch
-    local items = { { item = self.tools, len = math.floor(t * 1.25) * 2 } }
-    for __, b in ipairs(self.buttons) do items[#items + 1] = { item = b, len = t } end
+    -- Each slot holds its items end to end; a slot may be empty (no check).
+    local slots = {
+        { self.tools, len = math.floor(t * 1.25) * 2 },
+        { self.undo_btn, self.redo_btn, len = 2 * t },
+        { self.hint_btn, len = t },
+        { self.check_btn, len = t },
+    }
     local along = landscape and rect.h or rect.w
     local used = 0
-    for __, it in ipairs(items) do used = used + it.len end
-    local gap = math.floor((along - used) / (#items + 1))
+    for __, slot in ipairs(slots) do used = used + slot.len end
+    local gap = math.floor((along - used) / (#slots + 1))
     local pos = gap
-    for __, it in ipairs(items) do
-        if landscape then
-            it.item:setRect(rect.x + math.floor((rect.w - t) / 2), rect.y + pos, t, it.len)
-        else
-            it.item:setRect(rect.x + pos, rect.y + math.floor((rect.h - t) / 2), it.len, t)
+    for __, slot in ipairs(slots) do
+        local at = pos
+        for _, item in ipairs(slot) do
+            local len = item == self.tools and slot.len or t
+            if landscape then
+                item:setRect(rect.x + math.floor((rect.w - t) / 2), rect.y + at, t, len)
+            else
+                item:setRect(rect.x + at, rect.y + math.floor((rect.h - t) / 2), len, t)
+            end
+            at = at + len
         end
-        pos = pos + it.len + gap
+        pos = pos + slot.len + gap
     end
 end
 

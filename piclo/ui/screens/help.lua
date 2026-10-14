@@ -1,5 +1,6 @@
 --[[
-"How to play": short headed paragraphs plus a drawn example line, laid out
+"How to play": short headed paragraphs, a drawn example line and the
+toolbar's icons next to their names (under the text that mentions them), laid out
 into pages that turn with swipes and the page-turn keys. On the first run it
 is an introduction rather than a submenu: no back button, and a "Got it"
 button to move on.
@@ -12,6 +13,7 @@ local _ = require("gettext")
 local Cell = require("piclo/model/cell")
 local Glyphs = require("piclo/ui/glyphs")
 local HeaderBar = require("piclo/ui/components/header_bar")
+local Icons = require("piclo/ui/icons")
 local Label = require("piclo/ui/components/label")
 local Refresh = require("piclo/ui/refresh")
 local TextButton = require("piclo/ui/components/text_button")
@@ -32,8 +34,10 @@ local function content()
         { kind = "example" },
         { kind = "heading", text = _("Marking squares") },
         { kind = "para", text = _("Choose Fill or Cross in the toolbar, then tap a square. Tap it again to clear it. Hold a square to use the other tool. Drag along a row or column to mark several squares at once. The page-turn buttons switch tools.") },
+        { kind = "icons", items = { { "fill", _("Fill") }, { "cross", _("Cross") } } },
         { kind = "heading", text = _("Getting stuck") },
-        { kind = "para", text = _("The bulb in the toolbar works out the next line for you and highlights its numbers. Undo takes the step back. In Settings you can also have mistakes checked, on request or as you play.") },
+        { kind = "para", text = _("The bulb in the toolbar fills in the next line that can be worked out and highlights its numbers. Undo takes the step back. In Settings you can also have mistakes checked, on request (with the magnifier) or as you play.") },
+        { kind = "icons", items = { { "hint", _("Hint") }, { "undo", _("Undo") }, { "inspect", _("Check") } } },
         { kind = "heading", text = _("Finishing") },
         { kind = "para", text = _("A number turns gray once its run is complete. When every filled square is right, the picture appears and joins your collection. Solving puzzles in a pack unlocks the next one.") },
     }
@@ -72,12 +76,34 @@ function HelpScreen:block(item, width)
         local l = Label.new{ text = item.text, role = "title", size = "body", max_width = width }
         self.widgets[#self.widgets + 1] = l
         return { h = l.h, gap = Theme.space.xl, paint = function(bb, x, y) l:paint(bb, x, y) end }
+    elseif item.kind == "icons" then
+        return self:iconsBlock(item.items, width)
     elseif item.kind == "para" then
         local tb = TextBoxWidget:new{ text = item.text, face = Theme.face("body"), width = width }
         self.widgets[#self.widgets + 1] = tb
         return { h = tb:getSize().h, gap = Theme.space.s, paint = function(bb, x, y) tb:paintTo(bb, x, y) end }
     end
     return self:exampleBlock()
+end
+
+--- A row of toolbar icons, each with its name beside it.
+function HelpScreen:iconsBlock(items, width)
+    local size, gap = Theme.icon, Theme.space.s
+    local entries = {}
+    for __, it in ipairs(items) do
+        local l = Label.new{ text = it[2], max_width = width }
+        self.widgets[#self.widgets + 1] = l
+        entries[#entries + 1] = { icon = it[1], label = l }
+    end
+    local h = math.max(size, entries[1].label.h)
+    local function paint(bb, x, y)
+        for __, e in ipairs(entries) do
+            Icons.paint(bb, e.icon, size, "normal", { x = x, y = y, w = size, h = h })
+            e.label:paintIn(bb, { x = x + size + gap, y = y, w = e.label.w, h = h }, "left")
+            x = x + size + gap + e.label.w + Theme.space.xl
+        end
+    end
+    return { h = h, gap = Theme.space.m, paint = paint }
 end
 
 function HelpScreen:exampleBlock()
@@ -122,7 +148,7 @@ function HelpScreen:layout(dimen)
     local bottom = H - Theme.touch - Theme.space.s
     if self.done_btn then
         local b = self.done_btn
-        local bw = math.max(b:preferredWidth(), Theme.touch * 4)
+        local bw = b:standardWidth(W - 2 * m)
         b:setRect(math.floor((W - bw) / 2), H - Theme.touch - Theme.space.l, bw, Theme.touch)
         bottom = b.rect.y - Theme.touch
     end

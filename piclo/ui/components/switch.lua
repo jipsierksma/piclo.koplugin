@@ -1,9 +1,12 @@
 --[[
 On/off switch for settings rows. Pure black and white so a toggle can use
 the fast refresh: off is an outlined track with a black knob on the left,
-on is a black track with a white knob on the right.
+on is a black track with a white knob on the right and a check mark in the
+knob. Knob side and check mark still read right in night mode, when
+inverting the screen swaps black and white.
 ]]
 
+local Icons = require("piclo/ui/icons")
 local Theme = require("piclo/ui/theme")
 
 local Switch = {}
@@ -37,7 +40,11 @@ function Switch:paint(bb)
     local ky = r.y + inset
     if self.on then
         bb:paintRoundedRect(r.x, r.y, r.w, r.h, Theme.BLACK, radius)
-        bb:paintRoundedRect(r.x + r.w - inset - knob, ky, knob, knob, Theme.WHITE, math.floor(knob / 2))
+        local kx = r.x + r.w - inset - knob
+        bb:paintRoundedRect(kx, ky, knob, knob, Theme.WHITE, math.floor(knob / 2))
+        -- Small enough to stay inside the round knob.
+        local mark = math.floor(knob * 0.68)
+        Icons.paint(bb, "check", mark, "normal", { x = kx, y = ky, w = knob, h = knob })
     else
         bb:paintBorder(r.x, r.y, r.w, r.h, Theme.line.regular, Theme.BLACK, radius)
         bb:paintRoundedRect(r.x + inset, ky, knob, knob, Theme.BLACK, math.floor(knob / 2))

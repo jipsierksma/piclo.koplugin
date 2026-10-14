@@ -1,8 +1,11 @@
 --[[
 Segmented control: a row (or column, in the landscape rail) of icon or
 text segments with one selected. The selected segment is inverted: black
-with a white glyph or label. One regular-weight outline holds the segments,
-with hairline dividers between them.
+with a white glyph or label. Its label is bold too (an icon gets a short
+dash under it instead): in night mode, when inverting the screen swaps
+which segment looks "on", that is what still tells them apart. One
+regular-weight outline holds the segments, with hairline dividers between
+them.
 ]]
 
 local Icons = require("piclo/ui/icons")
@@ -24,7 +27,8 @@ function Segmented.new(opts)
     for __, item in ipairs(self.items) do
         if item.text then
             item.dark = Label.new{ text = item.text, color = Theme.BLACK }
-            item.light = Label.new{ text = item.text, color = Theme.WHITE }
+            -- Only the selected segment uses the light label: bold.
+            item.light = Label.new{ text = item.text, role = "title", size = "body", color = Theme.WHITE }
         end
     end
     return self
@@ -44,7 +48,7 @@ end
 function Segmented:preferredWidth()
     local widest = 0
     for __, item in ipairs(self.items) do
-        widest = math.max(widest, item.dark and item.dark.w or Theme.icon)
+        widest = math.max(widest, item.dark and math.max(item.dark.w, item.light.w) or Theme.icon)
     end
     return #self.items * (widest + 2 * Theme.space.l)
 end
@@ -100,6 +104,12 @@ function Segmented:paint(bb)
             (on and item.light or item.dark):paintIn(bb, s, "center")
         else
             Icons.paint(bb, item.icon, Theme.icon, on and "inverted" or "normal", s)
+            if on then
+                -- An icon can't be bold: a short dash under it marks it instead.
+                local bar = Theme.line.strong
+                bb:paintRect(s.x + math.floor((s.w - Theme.icon) / 2), s.y + s.h - Theme.space.xs - lw - bar,
+                    Theme.icon, bar, Theme.WHITE)
+            end
         end
         if k > 1 then
             if self.vertical then
