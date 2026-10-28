@@ -60,14 +60,14 @@ describe("puzzles changing under saved progress", function()
     end
 
     it("keeps a pack unlocked when a puzzle that opened it is replaced", function()
-        local _, app = solvedThenReopened(5)
+        local _, app = solvedThenReopened(3)
         local catalog = app:catalog()
         local starter = catalog.packs[1]
         -- An update swaps the first drawing for a new one with a new id.
         local gone = table.remove(starter.puzzles, 1)
         catalog.by_puzzle[gone.id] = nil
         app._collection = nil
-        assert.are.equal(4, app:collection():solvedIn("starter"))
+        assert.are.equal(2, app:collection():solvedIn("starter"))
         assert.is_true(app:collection():packInfo(catalog.packs[2]).unlocked)
         app:showPacks()
         assert.is_true(H.host.screen.rows[2].info.unlocked)
@@ -75,7 +75,7 @@ describe("puzzles changing under saved progress", function()
     end)
 
     it("still locks packs again after resetting all progress", function()
-        local _, app = solvedThenReopened(5)
+        local _, app = solvedThenReopened(3)
         app:resetProgress()
         assert.is_false(app:collection():packInfo(app:catalog().packs[2]).unlocked)
     end)
@@ -183,7 +183,7 @@ describe("rotating at awkward moments", function()
         clean()
     end)
 
-    it("keeps the new picture marked and Next puzzle offered", function()
+    it("keeps the new picture marked", function()
         local _, screen, game = H.play(1, 1)
         H.solveByTapping(screen, game)
         UIManager:runScheduled()
@@ -191,10 +191,8 @@ describe("rotating at awkward moments", function()
         rotate()
         local pack = H.host.screen
         assert.are.equal(game.puzzle.id, pack.marked)
-        local btn = pack.next_btn.rect
-        assert.is_true(btn.y + btn.h <= Screen.h)
         for _, tile in ipairs(pack.tiles) do
-            assert.is_true(tile.caption_rect.y + tile.caption_rect.h <= btn.y)
+            assert.is_true(tile.caption_rect.y + tile.caption_rect.h <= Screen.h)
         end
         clean()
     end)

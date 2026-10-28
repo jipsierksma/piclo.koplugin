@@ -14,6 +14,7 @@ without putting gray numbers on a gray band. All legible without color.
 
 local RenderText = require("ui/rendertext")
 local Cell = require("piclo/model/cell")
+local Geometry = require("piclo/ui/board_geometry")
 local Glyphs = require("piclo/ui/glyphs")
 local Grid = require("piclo/model/grid")
 local Refresh = require("piclo/ui/refresh")
@@ -72,9 +73,10 @@ function BoardWidget:boardRect()
     return rect(b.x, b.y, b.w, b.h)
 end
 
--- Lines 6, 11, ... start a new group of 5: their clue strip gets a divider.
-local function startsGroup(k)
-    return k > 1 and (k - 1) % 5 == 0
+-- Lines 6, 11, ... start a new block of 5 (on grids of 10 or more): their
+-- clue strip gets a divider, in line with the grid's block line.
+local function startsGroup(k, n)
+    return Geometry.blockLine(k - 1, n)
 end
 
 function BoardWidget:clueColor(done, focused)
@@ -82,9 +84,26 @@ function BoardWidget:clueColor(done, focused)
     return (done and self.highlight_done) and Theme.SECONDARY or Theme.BLACK
 end
 
+-- Highlighted: the line a hint points at, or one a practice step is about.
 function BoardWidget:focused(axis, k)
     local f = self.game.focus
-    return f ~= nil and f.axis == axis and f.index == k
+    if f ~= nil and f.axis == axis and f.index == k then return true end
+    return self.guide ~= nil and self.guide[axis][k] == true
+end
+
+--[[
+Highlights the clues of a practice step's lines ({ row = {[r] = true},
+col = {...} }, or nil for none). Returns a change report naming the clue
+strips that changed, for changeRects and paintChanges.
+]]
+function BoardWidget:setGuide(set)
+    local report = { cells = {}, rows = {}, cols = {} }
+    for __, s in ipairs({ self.guide or {}, set or {} }) do
+        for k in pairs(s.row or {}) do report.rows[k] = true end
+        for k in pairs(s.col or {}) do report.cols[k] = true end
+    end
+    self.guide = set
+    return report
 end
 
 -- Clue strip background: black when hinted, else white.
@@ -97,7 +116,7 @@ function BoardWidget:paintRowClues(bb, r)
     local x, y, w, h = g:rowClueRect(r)
     local focused = self:focused("row", r)
     bb:paintRect(x, y, w, h, clueBackground(focused))
-    if startsGroup(r) and not focused then bb:paintRect(x, y, w, Theme.line.hair, Theme.SECONDARY) end
+    if startsGroup(r, self.game.puzzle.h) and not focused then bb:paintRect(x, y, w, Theme.line.hair, Theme.SECONDARY) end
     local clue, done = self.game.puzzle.row_clues[r], self.game.row_nums[r]
     local x_end = g.board.x + g.row_gutter
     local baseline = y + math.floor((h + self.cap_h) / 2)
@@ -116,7 +135,7 @@ function BoardWidget:paintColClues(bb, c)
     local x, y, w, h = g:colClueRect(c)
     local focused = self:focused("col", c)
     bb:paintRect(x, y, w, h, clueBackground(focused))
-    if startsGroup(c) and not focused then bb:paintRect(x, y, Theme.line.hair, h, Theme.SECONDARY) end
+    if startsGroup(c, self.game.puzzle.w) and not focused then bb:paintRect(x, y, Theme.line.hair, h, Theme.SECONDARY) end
     local clue, done = self.game.puzzle.col_clues[c], self.game.col_nums[c]
     local sh = g.measure.slot_h
     local y_end = g.board.y + g.col_gutter

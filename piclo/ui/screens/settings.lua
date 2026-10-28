@@ -1,7 +1,8 @@
 --[[
 Settings: grouped rows, a group title in small secondary type, then rows
-with the label (and a line of explanation) on the left and the control on
-the right: a switch, or a segmented control for a few choices. When a
+with the label (and a line of explanation where the control alone can't say
+it) on the left and the control on the right: a switch, or a segmented
+control for a few choices. A line in small type at the bottom says who made Piclo. When a
 control doesn't fit beside its label it moves below it. Pages turn with
 swipes and the page-turn keys when the rows don't fit one screen.
 
@@ -24,25 +25,16 @@ local Theme = require("piclo/ui/theme")
 local SettingsScreen = {}
 SettingsScreen.__index = SettingsScreen
 
--- choices: { {value, text}, ... }; notes: per value, or one string.
+-- choices: { {value, text}, ... }; notes: a line under the label.
 local function groups()
     return {
         { title = _("Gameplay"), rows = {
             { key = "mistakes", label = _("Mistake checking"),
-                choices = { { "off", _("Off") }, { "request", _("On request") }, { "instant", _("Instant") } },
-                notes = {
-                    off = _("No feedback while you play"),
-                    request = _("A check button marks wrong squares"),
-                    instant = _("Wrong fills are turned into crosses"),
-                } },
+                choices = { { "off", _("Off") }, { "request", _("On request") }, { "instant", _("Instant") } } },
             { key = "highlight_done", label = _("Highlight completed clues"), switch = true,
                 notes = _("Finished numbers turn gray") },
             { key = "hold_action", label = _("Hold a square to"),
-                choices = { { "opposite", _("Use other tool") }, { "cross", _("Cross") } },
-                notes = {
-                    opposite = _("Holding uses the tool that isn't selected"),
-                    cross = _("Holding always places a cross"),
-                } },
+                choices = { { "opposite", _("Use other tool") }, { "cross", _("Cross") } } },
         } },
         { title = _("Display"), rows = {
             { key = "show_timer", label = _("Show timer in header"), switch = true,
@@ -83,6 +75,16 @@ end
 function SettingsScreen:free()
     self.header:freeText()
     self:freeLayout()
+    if self.credits then self.credits:free() end
+    self.credits = nil
+end
+
+-- Makes the credit line (wrapped on narrow screens) for width w; returns its height.
+function SettingsScreen:layoutCredits(w)
+    if self.credits then self.credits:free() end
+    self.credits = Label.new{ text = T(_("Made by %1"), "Jip Sierksma"),
+        size = "caption", color = Theme.SECONDARY, max_width = w }
+    return self.credits.h
 end
 
 function SettingsScreen:label(opts)
@@ -93,9 +95,7 @@ end
 
 function SettingsScreen:noteFor(row)
     if row.action == "reset" and self.cleared then return _("All progress cleared") end
-    local n = row.notes
-    if type(n) == "table" then return n[self.app:setting(row.key)] end
-    return n
+    return row.notes
 end
 
 -- Builds a row's control (or nil) and returns it with its natural size.
@@ -119,7 +119,7 @@ title and the control share the first line when they fit (else the control
 moves to the bottom of the row), and the note runs underneath at full width.
 ]]
 function SettingsScreen:layoutRow(row, x, y, w)
-    local entry = { row = row, x = x, w = w, note_w = w }
+    local entry = { row = row, x = x, w = w }
     local ctrl, cw, ch = self:control(row)
     if row.action then cw = Theme.touch end -- room for the chevron
     local side = (ctrl or row.action) and cw + Theme.space.xl or 0
@@ -143,8 +143,8 @@ function SettingsScreen:layoutRow(row, x, y, w)
     end
     if ctrl and not beside then
         cw = math.min(cw, w)
-        ctrl:setRect(x + w - cw, bottom + Theme.space.s, cw, ch)
-        bottom = bottom + Theme.space.s + ch
+        ctrl:setRect(x + w - cw, bottom + Theme.space.m, cw, ch)
+        bottom = bottom + Theme.space.m + ch
     end
     local h = math.max(bottom + pad - y, Theme.touch + 2 * pad)
     entry.control = ctrl
@@ -188,10 +188,14 @@ function SettingsScreen:layout(dimen)
     local w = math.min(W - 2 * m, Theme.touch * 16)
     local x = math.floor((W - w) / 2)
     local top = Theme.header_h + Theme.space.s
+    -- The credits sit at the bottom of the screen, below every page.
+    local credits_h = self:layoutCredits(w)
+    local foot = H - Theme.space.l - credits_h
     -- Room for a page indicator only when one is needed.
-    self.pages = self:paginate(x, w, top, H - Theme.space.l)
-    local bottom = H - Theme.touch - Theme.space.s
-    if #self.pages > 1 then self.pages = self:paginate(x, w, top, bottom) end
+    self.pages = self:paginate(x, w, top, foot - Theme.space.l)
+    local bottom = foot - Theme.touch
+    if #self.pages > 1 then self.pages = self:paginate(x, w, top, bottom - Theme.space.s) end
+    self.credits_rect = { x = 0, y = foot, w = W, h = credits_h }
     self.page = math.max(1, math.min(self.page, #self.pages))
     self.pager = nil
     if #self.pages > 1 then
@@ -233,15 +237,12 @@ function SettingsScreen:paint(bb)
     self.header:paint(bb)
     for __, e in ipairs(self.pages[self.page]) do self:paintEntry(bb, e) end
     if self.pager then self.pager:paintIn(bb, self.pager_rect, "center") end
+    self.credits:paintIn(bb, self.credits_rect, "center")
 end
 
--- Saves a new value and repaints the row (its note may depend on the value).
+-- Saves a new value and repaints the row.
 function SettingsScreen:change(e, value)
     self.app:setSetting(e.row.key, value)
-    if type(e.row.notes) == "table" then
-        e.note = self:label{ text = self:noteFor(e.row), size = "caption", color = Theme.SECONDARY,
-            max_width = e.note_w }
-    end
     Refresh.regions(self.window, "ui", { e.rect }, function(bb) self:paintEntry(bb, e) end)
 end
 

@@ -10,7 +10,7 @@ local function store()
     return s
 end
 
--- The shipped packs: starter (8), then house after 5 in starter, then woods.
+-- The shipped packs: starter (4), then house after 3 in starter, then woods.
 local catalog = Catalog.load("piclo/data/packs")
 
 local function fresh()
@@ -36,15 +36,15 @@ describe("pack info", function()
     it("names the packs a solve just unlocked", function()
         local col, progress = fresh()
         local before = col:lockedPacks()
-        solve(progress, "starter", 4)
+        solve(progress, "starter", 2)
         assert.are.same({}, col:newlyUnlocked(before))
-        solve(progress, "starter", 5)
+        solve(progress, "starter", 3)
         assert.are.same({ "Around the House" }, col:newlyUnlocked(before))
     end)
 
     it("doesn't count revealed puzzles towards unlocks", function()
         local col, progress = fresh()
-        for k = 1, 5 do progress:markSolved(catalog:pack("starter").puzzles[k].id, 10, true) end
+        for k = 1, 4 do progress:markSolved(catalog:pack("starter").puzzles[k].id, 10, true) end
         assert.is_false(col:packInfo(catalog:pack("house")).unlocked)
     end)
 end)
@@ -76,7 +76,7 @@ describe("play", function()
 
     it("moves on to the next pack and runs out when all is done", function()
         local col, progress = fresh()
-        solve(progress, "starter", 8)
+        solve(progress, "starter", #catalog:pack("starter").puzzles)
         assert.are.equal(catalog:pack("house").puzzles[1], col:playTarget())
         for __, pack in ipairs(catalog.packs) do solve(progress, pack.id, #pack.puzzles) end
         assert.is_nil(col:playTarget())
@@ -105,7 +105,7 @@ describe("play", function()
         local col, progress = fresh()
         local solved, total = col:totals()
         assert.are.equal(0, solved)
-        assert.are.equal(30, total)
+        assert.are.equal(23, total)
         solve(progress, "starter", 3)
         assert.are.equal(3, (col:totals()))
     end)
@@ -134,24 +134,24 @@ describe("would unlock", function()
         local col, progress = fresh()
         local starter = catalog:pack("starter").puzzles
         assert.is_false(col:wouldUnlock(starter[1]))
-        solve(progress, "starter", 4)
+        solve(progress, "starter", 2)
         assert.is_false(col:wouldUnlock(starter[1]), "already solved")
-        assert.is_true(col:wouldUnlock(starter[5]))
-        assert.is_true(col:wouldUnlock(starter[8]))
+        assert.is_true(col:wouldUnlock(starter[3]))
+        assert.is_true(col:wouldUnlock(starter[4]))
         assert.is_false(col:wouldUnlock(catalog:pack("house").puzzles[1]), "house needs 8 for woods")
     end)
 
     it("is false once the next pack is open", function()
         local col, progress = fresh()
-        solve(progress, "starter", 5)
-        assert.is_false(col:wouldUnlock(catalog:pack("starter").puzzles[6]))
+        solve(progress, "starter", 3)
+        assert.is_false(col:wouldUnlock(catalog:pack("starter").puzzles[4]))
     end)
 
     it("ignores revealed puzzles, which don't count", function()
         local col, progress = fresh()
-        solve(progress, "starter", 3)
+        solve(progress, "starter", 1)
         local starter = catalog:pack("starter").puzzles
-        progress:markSolved(starter[4].id, 10, true)
-        assert.is_false(col:wouldUnlock(starter[5]), "only 4 would be solved")
+        progress:markSolved(starter[2].id, 10, true)
+        assert.is_false(col:wouldUnlock(starter[3]), "only 2 would be solved")
     end)
 end)

@@ -22,6 +22,17 @@ local function sizeText(puzzle)
     return T(_("%1×%2"), puzzle.w, puzzle.h)
 end
 
+-- "10×10", or "5×5 to 8×8" for a pack whose grids grow.
+local function packSize(pack)
+    local small, large = pack.puzzles[1], pack.puzzles[1]
+    for __, p in ipairs(pack.puzzles) do
+        if p.w * p.h < small.w * small.h then small = p end
+        if p.w * p.h > large.w * large.h then large = p end
+    end
+    if small == large or sizeText(small) == sizeText(large) then return sizeText(small) end
+    return T(_("%1 to %2"), sizeText(small), sizeText(large))
+end
+
 --- opts: app, page (1-based, optional)
 function PacksScreen.new(opts)
     local app = opts.app
@@ -55,9 +66,9 @@ function PacksScreen:row(pack, y, W)
     if not info.unlocked then
         sub = T(_("Solve %1 in %2 to unlock"), info.rule.count, info.rule.after_title)
     elseif done then
-        sub = T(_("%1 · All %2 solved"), sizeText(pack.puzzles[1]), info.total)
+        sub = T(_("%1 · All %2 solved"), packSize(pack), info.total)
     else
-        sub = T(_("%1 · %2 of %3 solved"), sizeText(pack.puzzles[1]), info.solved, info.total)
+        sub = T(_("%1 · %2 of %3 solved"), packSize(pack), info.solved, info.total)
     end
     local row = ListRow.new{
         rect = { x = 0, y = y, w = W, h = Theme.row_h },

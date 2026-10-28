@@ -8,15 +8,22 @@ grid too (see board_placement.lua).
 
 Grid boundary k (0..n) sits at pixel grid_x + k * cell. Its line is centered
 on that pixel: hairline inside 5-blocks, regular every 5 cells, strong at
-the outer border. Cell contents sit strictly between the lines.
+the outer border. Only lines of 10 cells or more are split into blocks of 5:
+on a 7x7 a block line after 5 would just look lopsided. Cell contents sit
+strictly between the lines.
 ]]
 
 local Geometry = {}
 Geometry.__index = Geometry
 
+--- True when inner boundary k of a line of n cells ends a block of 5.
+function Geometry.blockLine(k, n)
+    return n >= 10 and k > 0 and k < n and k % 5 == 0
+end
+
 local function lineWeight(lines, k, n)
     if k == 0 or k == n then return lines.strong end
-    if k % 5 == 0 then return lines.regular end
+    if Geometry.blockLine(k, n) then return lines.regular end
     return lines.hair
 end
 

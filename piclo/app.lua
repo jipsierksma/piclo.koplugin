@@ -12,6 +12,7 @@ soon as its screen is back on top.
 
 local UIManager = require("ui/uimanager")
 local Catalog = require("piclo/data/catalog")
+local Coach = require("piclo/coach")
 local Collection = require("piclo/collection")
 local Game = require("piclo/game")
 local GameScreen = require("piclo/ui/screens/game")
@@ -19,6 +20,7 @@ local HelpScreen = require("piclo/ui/screens/help")
 local HomeScreen = require("piclo/ui/screens/home")
 local Host = require("piclo/ui/host")
 local Icons = require("piclo/ui/icons")
+local L10n = require("piclo/l10n")
 local PackScreen = require("piclo/ui/screens/pack")
 local PacksScreen = require("piclo/ui/screens/packs")
 local Progress = require("piclo/storage/progress")
@@ -37,6 +39,8 @@ App.FLUSH_DELAY = 5
 
 --- opts: ui (ReaderUI or FileManager), path (plugin dir), version, progress (tests)
 function App.new(opts)
+    -- Before anything builds text: pack titles are translated when loaded.
+    L10n.load(opts.path, _)
     Icons.init(opts.path)
     local self = setmetatable({
         ui = opts.ui,
@@ -57,6 +61,14 @@ function App:catalog()
         self._catalog = Catalog.load(self.path .. "/piclo/data/packs")
     end
     return self._catalog
+end
+
+--- The practice puzzles offered in How to play (see piclo/data/practice.lua).
+function App:lessons()
+    if not self._lessons then
+        self._lessons = Coach.load(self.path .. "/piclo/data/practice.lua")
+    end
+    return self._lessons
 end
 
 function App:progress()
@@ -113,8 +125,9 @@ function App:build(route)
     if route.name == "packs" then return PacksScreen.new{ app = self, page = route.page } end
     if route.name == "pack" then
         return PackScreen.new{ app = self, pack = self:catalog():pack(route.pack_id), page = route.page,
-            marked = route.marked, next = route.next }
+            marked = route.marked }
     end
+    if route.name == "game" and self.game.practice then return self:buildPractice() end
     if route.name == "game" then
         local p = self.game.puzzle
         local deghost = self:setting("deghost_every")
@@ -133,6 +146,35 @@ function App:build(route)
         }
     end
     return RevealScreen.new{ app = self, data = route.data, rail_side = self:setting("rail_side") }
+end
+
+-- A practice board: guided, no menu or timer, and nothing is saved.
+function App:buildPractice()
+    local k, n = self.game.practice, #self:lessons()
+    self.game:setMistakeMode("off")
+    return GameScreen.new{
+        app = self,
+        game = self.game,
+        title = T(_("Practice %1 of %2"), k, n),
+        highlight_done = self:setting("highlight_done"),
+        hold_action = self:setting("hold_action"),
+        rail_side = self:setting("rail_side"),
+        practice = {
+            coach = Coach.new(self:lessons()[k]),
+            button = k < n and _("Next practice") or _("Done"),
+            on_button = function()
+                if k < n then self:startPractice(k + 1, true) else self:back() end
+            end,
+        },
+    }
+end
+
+--- Opens practice puzzle k on a fresh board, over How to play (or instead of the one before).
+function App:startPractice(k, replace)
+    self:stopGame()
+    self.game = Game.new{ puzzle = self:lessons()[k].puzzle }
+    self.game.practice = k
+    if replace then self:replaceTop{ name = "game" } else self:push{ name = "game" } end
 end
 
 -- The timer runs only while the board is on screen.
@@ -212,7 +254,7 @@ end
 function App:openPuzzle(puzzle)
     -- Leaving a collection for a puzzle ends its "just solved" moment.
     local top = self.stack[#self.stack]
-    if top and top.name == "pack" then top.marked, top.next = nil, nil end
+    if top and top.name == "pack" then top.marked = nil end
     local progress = self:progress()
     local revealed = progress:isRevealed(puzzle.id)
     if revealed or progress:isSolved(puzzle.id) then
@@ -236,11 +278,9 @@ end
 
 --[[
 Returns to the pack's collection, reusing it from the stack if present.
-after (optional): { marked = puzzle id just solved, next = puzzle to offer }
-for the collection to mark the new picture and offer "Next puzzle".
+marked (optional): the puzzle id just solved, which the collection frames.
 ]]
-function App:backToCollection(pack_id, after)
-    after = after or {}
+function App:backToCollection(pack_id, marked)
     local route
     for k = #self.stack, 1, -1 do
         local r = self.stack[k]
@@ -254,9 +294,17 @@ function App:backToCollection(pack_id, after)
         route = { name = "pack", pack_id = pack_id }
         self.stack = { { name = "home" }, { name = "packs" }, route }
     end
-    route.marked, route.next = after.marked, after.next
+    route.marked = marked
     -- Open on the page with the new picture.
-    if after.marked then route.page = nil end
+    if marked then route.page = nil end
+    self:render()
+end
+
+--- From the reveal of a pack's last puzzle to the next pack's collection; back goes to Packs.
+function App:showNextPack(pack_id)
+    local packs = self.stack[2]
+    if not (packs and packs.name == "packs") then packs = { name = "packs" } end
+    self.stack = { { name = "home" }, packs, { name = "pack", pack_id = pack_id } }
     self:render()
 end
 
@@ -297,7 +345,7 @@ function App:showSolution()
         mode = "solved",
         puzzle = p,
         revealed = true,
-        next = self:collection():nextAfter(p),
+        next_pack = self:collection():nextPackAfter(p),
         unlocked = {},
         unlock_room = unlock_room,
     } }, "full")
@@ -327,7 +375,7 @@ end
 
 function App:saveGame()
     local game = self.game
-    if not game or game.solved then return end
+    if not game or game.solved or game.practice then return end
     local p = game.puzzle
     self:progress():saveBoard(p.id, game.board.cells, p.w * p.h, game:elapsed(), game.board:isEmpty())
 end
@@ -378,7 +426,7 @@ function App:onSolved(game)
         elapsed = game:elapsed(),
         best = progress:best(p.id),
         result = result,
-        next = collection:nextAfter(p),
+        next_pack = collection:nextPackAfter(p),
         unlock_room = unlock_room,
         unlocked = unlocked,
     }

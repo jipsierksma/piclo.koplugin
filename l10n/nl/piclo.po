@@ -1,0 +1,639 @@
+# Dutch translation of Piclo.
+# Copyright (C) 2026 Jip Sierksma
+# This file is distributed under the same license as Piclo (AGPL-3.0).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Piclo\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-15 18:08+0200\n"
+"PO-Revision-Date: 2026-10-14 21:50+0200\n"
+"Last-Translator: Jip Sierksma\n"
+"Language-Team: none\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: main.lua:30 main.lua:43
+msgid "Piclo"
+msgstr "Piclo"
+
+#: piclo/app.lua:139 piclo/ui/screens/home.lua:127
+msgid "%1 · %2"
+msgstr "%1 · %2"
+
+#: piclo/app.lua:158
+msgid "Practice %1 of %2"
+msgstr "Oefening %1 van %2"
+
+#: piclo/app.lua:164
+msgid "Done"
+msgstr "Klaar"
+
+#: piclo/app.lua:164
+msgid "Next practice"
+msgstr "Volgende oefening"
+
+#: piclo/coach.lua:129
+msgid ""
+"The marked square doesn't fit the numbers. Tap it to change it, or use Undo."
+msgstr ""
+"Het gemarkeerde vakje past niet bij de getallen. Tik erop om het te "
+"veranderen, of gebruik Ongedaan maken."
+
+#: piclo/data/packs/house.lua:4
+msgid "Around the House"
+msgstr "In huis"
+
+#: piclo/data/packs/house.lua:11
+msgid "Toaster"
+msgstr "Broodrooster"
+
+#: piclo/data/packs/house.lua:27
+msgid "Chair"
+msgstr "Stoel"
+
+#: piclo/data/packs/house.lua:43
+msgid "Teacup"
+msgstr "Theekopje"
+
+#: piclo/data/packs/house.lua:59
+msgid "Teapot"
+msgstr "Theepot"
+
+#: piclo/data/packs/house.lua:75
+msgid "Sock"
+msgstr "Sok"
+
+#: piclo/data/packs/house.lua:91
+msgid "Candle"
+msgstr "Kaars"
+
+#: piclo/data/packs/house.lua:107
+msgid "Alarm clock"
+msgstr "Wekker"
+
+#: piclo/data/packs/house.lua:123
+msgid "Light bulb"
+msgstr "Gloeilamp"
+
+#: piclo/data/packs/house.lua:139
+msgid "Key"
+msgstr "Sleutel"
+
+#: piclo/data/packs/house.lua:155
+msgid "Table lamp"
+msgstr "Tafellamp"
+
+#: piclo/data/packs/house.lua:171
+msgid "Rubber duck"
+msgstr "Badeend"
+
+#: piclo/data/packs/starter.lua:7
+msgid "First Steps"
+msgstr "Eerste stappen"
+
+#: piclo/data/packs/starter.lua:14
+msgid "Egg"
+msgstr "Ei"
+
+#: piclo/data/packs/starter.lua:26
+msgid "Chick"
+msgstr "Kuiken"
+
+#: piclo/data/packs/starter.lua:39
+msgid "First flap"
+msgstr "Eerste vleugelslag"
+
+#: piclo/data/packs/starter.lua:53
+msgid "Flight"
+msgstr "Vlucht"
+
+#: piclo/data/packs/woods.lua:4
+msgid "In the Woods"
+msgstr "In het bos"
+
+#: piclo/data/packs/woods.lua:11
+msgid "Tent"
+msgstr "Tent"
+
+#: piclo/data/packs/woods.lua:32
+msgid "Snail"
+msgstr "Slak"
+
+#: piclo/data/packs/woods.lua:53
+msgid "Butterfly"
+msgstr "Vlinder"
+
+#: piclo/data/packs/woods.lua:74
+msgid "Owl"
+msgstr "Uil"
+
+#: piclo/data/packs/woods.lua:95
+msgid "Acorn"
+msgstr "Eikeltje"
+
+#: piclo/data/packs/woods.lua:116
+msgid "Pine cone"
+msgstr "Dennenappel"
+
+#: piclo/data/packs/woods.lua:137
+msgid "Mushroom"
+msgstr "Paddenstoel"
+
+#: piclo/data/packs/woods.lua:158
+msgid "Campfire"
+msgstr "Kampvuur"
+
+#: piclo/data/practice.lua:28
+msgid ""
+"The top row says 5, and it has five squares: every one of them is filled. "
+"Tap each square, or drag along the row."
+msgstr ""
+"De bovenste rij zegt 5 en heeft vijf vakjes: ze worden dus allemaal gevuld. "
+"Tik op elk vakje, of sleep langs de rij."
+
+#: piclo/data/practice.lua:30
+msgid "Rows 3 and 5 say 5 too. Fill them."
+msgstr "Rij 3 en 5 zeggen ook 5. Vul ze."
+
+#: piclo/data/practice.lua:32
+msgid ""
+"Row 2 says 1 1 1: three single squares with a gap between each. That takes "
+"exactly five squares, so they only fit one way. Fill the three."
+msgstr ""
+"Rij 2 zegt 1 1 1: drie losse vakjes met telkens een gat ertussen. Dat zijn "
+"precies vijf vakjes, dus ze passen maar op één manier. Vul de drie."
+
+#: piclo/data/practice.lua:34
+msgid ""
+"The gaps stay empty. Choose Cross in the toolbar and cross them, so you can "
+"see the row is done."
+msgstr ""
+"De gaten blijven leeg. Kies Kruisje in de werkbalk en zet er een kruisje in, "
+"dan zie je dat de rij klaar is."
+
+#: piclo/data/practice.lua:36
+msgid "Row 4 is the same as row 2. Fill it to finish the picture."
+msgstr "Rij 4 is hetzelfde als rij 2. Vul hem om de afbeelding af te maken."
+
+#: piclo/data/practice.lua:38
+msgid ""
+"Solved. Every puzzle works like this: find a line you can be sure of, mark "
+"it, and move on."
+msgstr ""
+"Opgelost. Zo werkt elke puzzel: zoek een rij of kolom waar je zeker van "
+"bent, vul hem in en ga verder."
+
+#: piclo/data/practice.lua:51
+msgid "Rows 2 and 3 say 5. Fill them."
+msgstr "Rij 2 en 3 zeggen 5. Vul ze."
+
+#: piclo/data/practice.lua:53
+msgid ""
+"Column 3 says 4. Its run starts at the top or one square lower, and both "
+"ways cover the middle three squares. Fill those."
+msgstr ""
+"Kolom 3 zegt 4. De reeks begint bovenaan of één vakje lager, en allebei "
+"bedekken ze de middelste drie vakjes. Vul die."
+
+#: piclo/data/practice.lua:55
+msgid "Columns 2 and 4 say 4 as well. Fill their middle three."
+msgstr "Kolom 2 en 4 zeggen ook 4. Vul hun middelste drie."
+
+#: piclo/data/practice.lua:57
+msgid ""
+"Row 4 says 3, and its run of three is there. The row is complete: cross its "
+"other squares."
+msgstr ""
+"Rij 4 zegt 3, en de reeks van drie staat er al. De rij is compleet: zet een "
+"kruisje in de andere vakjes."
+
+#: piclo/data/practice.lua:59
+msgid "Columns 1 and 5 say 2, and both have their two. Cross the rest of them."
+msgstr ""
+"Kolom 1 en 5 zeggen 2, en hebben er allebei twee. Zet een kruisje in de rest."
+
+#: piclo/data/practice.lua:61
+msgid ""
+"Row 1 says 1 1, with three squares left. Two runs need a gap between them, "
+"so they take the outer two. Fill those and cross the middle."
+msgstr ""
+"Rij 1 zegt 1 1, met nog drie vakjes over. Twee reeksen hebben een gat "
+"ertussen nodig, dus ze nemen de buitenste twee. Vul die en zet een kruisje "
+"in het midden."
+
+#: piclo/data/practice.lua:63
+msgid ""
+"Finish the picture on your own. When you're stuck, the bulb in the toolbar "
+"shows the next step."
+msgstr ""
+"Maak de afbeelding zelf af. Zit je vast, dan laat het lampje in de werkbalk "
+"de volgende stap zien."
+
+#: piclo/data/practice.lua:65
+msgid ""
+"Solved. That's all there is to it. The packs start small and grow from there."
+msgstr ""
+"Opgelost. Meer is het niet. De pakketten beginnen klein en worden steeds "
+"groter."
+
+#: piclo/ui/components/sheet.lua:34
+msgid "Cancel"
+msgstr "Annuleren"
+
+#: piclo/ui/screens/game.lua:212
+msgid "Nothing left to hint"
+msgstr "Geen hint meer mogelijk"
+
+#: piclo/ui/screens/game.lua:214
+msgid "Fix the marked square first"
+msgstr "Verbeter eerst het gemarkeerde vakje"
+
+#: piclo/ui/screens/game.lua:222
+msgid "No mistakes so far"
+msgstr "Nog geen fouten"
+
+#: piclo/ui/screens/game.lua:224
+msgid "1 square is wrong"
+msgid_plural "%1 squares are wrong"
+msgstr[0] "1 vakje is fout"
+msgstr[1] "%1 vakjes zijn fout"
+
+#: piclo/ui/screens/game.lua:254
+msgid "%1 min"
+msgstr "%1 min"
+
+#: piclo/ui/screens/game.lua:255
+msgid "%1 h %2 min"
+msgstr "%1 u %2 min"
+
+#: piclo/ui/screens/game_menu.lua:21
+msgid "Restart this puzzle?"
+msgstr "Deze puzzel herstarten?"
+
+#: piclo/ui/screens/game_menu.lua:22
+msgid "Your marks and time on this board will be cleared."
+msgstr "Je markeringen en tijd op dit bord worden gewist."
+
+#: piclo/ui/screens/game_menu.lua:23
+msgid "Restart"
+msgstr "Herstarten"
+
+#: piclo/ui/screens/game_menu.lua:34
+msgid "Show the solution?"
+msgstr "De oplossing tonen?"
+
+#: piclo/ui/screens/game_menu.lua:35
+msgid ""
+"The picture joins your collection as revealed rather than solved. You can "
+"play it again any time."
+msgstr ""
+"De afbeelding komt in je verzameling als onthuld in plaats van opgelost. Je "
+"kunt de puzzel altijd opnieuw spelen."
+
+#: piclo/ui/screens/game_menu.lua:36 piclo/ui/screens/game_menu.lua:52
+msgid "Show solution"
+msgstr "Oplossing tonen"
+
+#: piclo/ui/screens/game_menu.lua:49
+msgid "Played for %1"
+msgstr "%1 gespeeld"
+
+#: piclo/ui/screens/game_menu.lua:51
+msgid "Restart puzzle"
+msgstr "Puzzel herstarten"
+
+#: piclo/ui/screens/game_menu.lua:54 piclo/ui/screens/help.lua:52
+#: piclo/ui/screens/home.lua:54
+msgid "How to play"
+msgstr "Speluitleg"
+
+#: piclo/ui/screens/game_menu.lua:58 piclo/ui/screens/home.lua:55
+#: piclo/ui/screens/settings.lua:61
+msgid "Settings"
+msgstr "Instellingen"
+
+#: piclo/ui/screens/help.lua:32
+msgid ""
+"Fill in squares to reveal a hidden picture. The numbers next to each row and "
+"above each column tell you which squares to fill."
+msgstr ""
+"Vul vakjes in om een verborgen afbeelding te onthullen. De getallen naast "
+"elke rij en boven elke kolom vertellen welke vakjes je moet invullen."
+
+#: piclo/ui/screens/help.lua:33
+msgid "Reading the numbers"
+msgstr "De getallen lezen"
+
+#: piclo/ui/screens/help.lua:34
+msgid ""
+"Each number is a run of filled squares, in order from left to right or top "
+"to bottom. Runs are separated by at least one empty square. The row below "
+"reads 3 1: a run of three, a gap, then one more."
+msgstr ""
+"Elk getal is een reeks gevulde vakjes, van links naar rechts of van boven "
+"naar beneden. Tussen twee reeksen zit minstens één leeg vakje. De rij "
+"hieronder is 3 1: een reeks van drie, een open vakje en dan nog één."
+
+#: piclo/ui/screens/help.lua:36
+msgid "Marking squares"
+msgstr "Vakjes markeren"
+
+#: piclo/ui/screens/help.lua:37
+msgid ""
+"Choose Fill or Cross in the toolbar, then tap a square. Tap it again to "
+"clear it. Hold a square to use the other tool. Drag along a row or column to "
+"mark several squares at once. The page-turn buttons switch tools."
+msgstr ""
+"Kies Vullen of Kruisje in de werkbalk en tik op een vakje. Tik er nog eens "
+"op om het te wissen. Houd een vakje vast om het andere gereedschap te "
+"gebruiken. Veeg langs een rij of kolom om meerdere vakjes tegelijk te "
+"markeren. Met de bladerknoppen wissel je van gereedschap."
+
+#: piclo/ui/screens/help.lua:38 piclo/ui/screens/settings.lua:37
+msgid "Cross"
+msgstr "Kruisje"
+
+#: piclo/ui/screens/help.lua:38
+msgid "Fill"
+msgstr "Vullen"
+
+#: piclo/ui/screens/help.lua:39
+msgid "Getting stuck"
+msgstr "Vastgelopen"
+
+#: piclo/ui/screens/help.lua:40
+msgid ""
+"The bulb in the toolbar fills in the next line that can be worked out and "
+"highlights its numbers. Undo takes the step back. In Settings you can also "
+"have mistakes checked, on request (with the magnifier) or as you play."
+msgstr ""
+"Het lampje in de werkbalk vult de volgende rij of kolom in die je kunt "
+"afleiden en markeert de getallen ervan. Met ongedaan maken zet je die stap "
+"terug. In de instellingen kun je ook fouten laten controleren: op verzoek "
+"(met het vergrootglas) of tijdens het spelen."
+
+#: piclo/ui/screens/help.lua:41
+msgid "Check"
+msgstr "Controleren"
+
+#: piclo/ui/screens/help.lua:41
+msgid "Hint"
+msgstr "Hint"
+
+#: piclo/ui/screens/help.lua:41
+msgid "Undo"
+msgstr "Ongedaan maken"
+
+#: piclo/ui/screens/help.lua:42
+msgid "Finishing"
+msgstr "Afronden"
+
+#: piclo/ui/screens/help.lua:43
+msgid ""
+"A number turns gray once its run is complete. When every filled square is "
+"right, the picture appears and joins your collection. Solving puzzles in a "
+"pack unlocks the next one."
+msgstr ""
+"Een getal wordt grijs zodra de reeks compleet is. Als elk gevuld vakje "
+"klopt, verschijnt de afbeelding en komt die in je verzameling. Los puzzels "
+"in een pakket op om het volgende pakket te ontgrendelen."
+
+#: piclo/ui/screens/help.lua:54
+msgid "Try a practice puzzle"
+msgstr "Probeer een oefenpuzzel"
+
+#: piclo/ui/screens/help.lua:58
+msgid "Got it"
+msgstr "Begrepen"
+
+#: piclo/ui/screens/help.lua:181 piclo/ui/screens/pack.lua:108
+#: piclo/ui/screens/packs.lua:113 piclo/ui/screens/settings.lua:202
+msgid "%1 / %2"
+msgstr "%1 / %2"
+
+#: piclo/ui/screens/home.lua:47
+msgid "Continue"
+msgstr "Doorgaan"
+
+#: piclo/ui/screens/home.lua:47
+msgid "Play"
+msgstr "Spelen"
+
+#: piclo/ui/screens/home.lua:47
+msgid "Start"
+msgstr "Beginnen"
+
+#: piclo/ui/screens/home.lua:53 piclo/ui/screens/packs.lua:40
+msgid "Packs"
+msgstr "Pakketten"
+
+#: piclo/ui/screens/home.lua:57
+msgid "Close"
+msgstr "Sluiten"
+
+#: piclo/ui/screens/home.lua:85 piclo/ui/screens/packs.lua:22
+msgid "%1×%2"
+msgstr "%1×%2"
+
+#: piclo/ui/screens/home.lua:118
+msgid "Every picture found"
+msgstr "Alle afbeeldingen gevonden"
+
+#: piclo/ui/screens/home.lua:118
+msgid "Play them again from Packs"
+msgstr "Speel ze opnieuw via Pakketten"
+
+#: piclo/ui/screens/home.lua:124
+msgid "1 picture to discover"
+msgid_plural "%1 pictures to discover"
+msgstr[0] "1 afbeelding om te ontdekken"
+msgstr[1] "%1 afbeeldingen om te ontdekken"
+
+#: piclo/ui/screens/home.lua:130
+msgid "%1 · %2 played"
+msgstr "%1 · %2 gespeeld"
+
+#: piclo/ui/screens/home.lua:132
+msgid "%1 · New"
+msgstr "%1 · Nieuw"
+
+#: piclo/ui/screens/home.lua:182 piclo/ui/screens/packs.lua:94
+msgid "%1 of %2 solved"
+msgstr "%1 van %2 opgelost"
+
+#: piclo/ui/screens/pack.lua:102
+msgid "???"
+msgstr "???"
+
+#: piclo/ui/screens/packs.lua:33
+msgid "%1 to %2"
+msgstr "%1 tot %2"
+
+#: piclo/ui/screens/packs.lua:67
+msgid "Solve %1 in %2 to unlock"
+msgstr "Los er %1 op in %2 om dit te ontgrendelen"
+
+#: piclo/ui/screens/packs.lua:69
+msgid "%1 · All %2 solved"
+msgstr "%1 · Alle %2 opgelost"
+
+#: piclo/ui/screens/packs.lua:71
+msgid "%1 · %2 of %3 solved"
+msgstr "%1 · %2 van %3 opgelost"
+
+#: piclo/ui/screens/reveal.lua:38
+msgid "Revealed"
+msgstr "Onthuld"
+
+#: piclo/ui/screens/reveal.lua:41 piclo/ui/screens/reveal.lua:47
+msgid "Best %1"
+msgstr "Beste %1"
+
+#: piclo/ui/screens/reveal.lua:43
+msgid "Solved in %1"
+msgstr "Opgelost in %1"
+
+#: piclo/ui/screens/reveal.lua:45
+msgid "New best"
+msgstr "Nieuw record"
+
+#: piclo/ui/screens/reveal.lua:63
+msgid "Play again"
+msgstr "Opnieuw spelen"
+
+#: piclo/ui/screens/reveal.lua:65 piclo/ui/screens/reveal.lua:71
+#: piclo/ui/screens/reveal.lua:75
+msgid "Back to collection"
+msgstr "Terug naar verzameling"
+
+#: piclo/ui/screens/reveal.lua:69
+msgid "Next pack"
+msgstr "Volgend pakket"
+
+#: piclo/ui/screens/reveal.lua:94
+msgid "%1 of %2 in %3"
+msgstr "%1 van %2 in %3"
+
+#: piclo/ui/screens/reveal.lua:128
+msgid "New pack unlocked: %1"
+msgstr "Nieuw pakket ontgrendeld: %1"
+
+#: piclo/ui/screens/reveal.lua:133
+msgid "New pack unlocked:"
+msgstr "Nieuw pakket ontgrendeld:"
+
+#: piclo/ui/screens/settings.lua:31
+msgid "Gameplay"
+msgstr "Spel"
+
+#: piclo/ui/screens/settings.lua:32
+msgid "Mistake checking"
+msgstr "Foutcontrole"
+
+#: piclo/ui/screens/settings.lua:33
+msgid "Instant"
+msgstr "Direct"
+
+#: piclo/ui/screens/settings.lua:33
+msgid "Off"
+msgstr "Uit"
+
+#: piclo/ui/screens/settings.lua:33
+msgid "On request"
+msgstr "Op verzoek"
+
+#: piclo/ui/screens/settings.lua:34
+msgid "Highlight completed clues"
+msgstr "Voltooide getallen markeren"
+
+#: piclo/ui/screens/settings.lua:35
+msgid "Finished numbers turn gray"
+msgstr "Voltooide getallen worden grijs"
+
+#: piclo/ui/screens/settings.lua:36
+msgid "Hold a square to"
+msgstr "Vakje vasthouden om"
+
+#: piclo/ui/screens/settings.lua:37
+msgid "Use other tool"
+msgstr "Ander gereedschap"
+
+#: piclo/ui/screens/settings.lua:39
+msgid "Display"
+msgstr "Weergave"
+
+#: piclo/ui/screens/settings.lua:40
+msgid "Show timer in header"
+msgstr "Timer in de kopregel"
+
+#: piclo/ui/screens/settings.lua:41
+msgid "Updates once a minute"
+msgstr "Werkt eens per minuut bij"
+
+#: piclo/ui/screens/settings.lua:42
+msgid "Clear ghosting every"
+msgstr "Scherm verversen na"
+
+#: piclo/ui/screens/settings.lua:43
+msgid "Never"
+msgstr "Nooit"
+
+#: piclo/ui/screens/settings.lua:44
+msgid "Moves between flashes"
+msgstr "Zetten tussen twee keer verversen"
+
+#: piclo/ui/screens/settings.lua:45
+msgid "Toolbar in landscape"
+msgstr "Werkbalk liggend"
+
+#: piclo/ui/screens/settings.lua:46
+msgid "Left"
+msgstr "Links"
+
+#: piclo/ui/screens/settings.lua:46
+msgid "Right"
+msgstr "Rechts"
+
+#: piclo/ui/screens/settings.lua:48
+msgid "Data"
+msgstr "Gegevens"
+
+#: piclo/ui/screens/settings.lua:49
+msgid "Reset all progress"
+msgstr "Alle voortgang resetten"
+
+#: piclo/ui/screens/settings.lua:50
+msgid "Clears every board, time and solved picture"
+msgstr "Wist elk bord, elke tijd en elke opgeloste afbeelding"
+
+#: piclo/ui/screens/settings.lua:62
+msgid "Piclo %1"
+msgstr "Piclo %1"
+
+#: piclo/ui/screens/settings.lua:85
+msgid "Made by %1"
+msgstr "Gemaakt door %1"
+
+#: piclo/ui/screens/settings.lua:97
+msgid "All progress cleared"
+msgstr "Alle voortgang is gereset"
+
+#: piclo/ui/screens/settings.lua:252
+msgid "Reset all progress?"
+msgstr "Alle voortgang resetten?"
+
+#: piclo/ui/screens/settings.lua:253
+msgid ""
+"Every board, time and solved picture will be cleared, and packs lock again. "
+"Settings stay. This can't be undone."
+msgstr ""
+"Elk bord, elke tijd en elke opgeloste afbeelding wordt gewist, en pakketten "
+"gaan weer op slot. Instellingen blijven. Dit kun je niet ongedaan maken."
+
+#: piclo/ui/screens/settings.lua:254
+msgid "Reset"
+msgstr "Resetten"

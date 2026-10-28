@@ -149,6 +149,16 @@ function Collection:wouldUnlock(puzzle)
     return false
 end
 
+--[[
+The pack to go on to once `puzzle`'s pack has nothing left to solve: the
+next unlocked pack with puzzles to solve. nil while the pack has puzzles
+left, or when nothing is left anywhere.
+]]
+function Collection:nextPackAfter(puzzle)
+    local next = self:nextAfter(puzzle)
+    if next and next.pack_id ~= puzzle.pack_id then return next.pack_id end
+end
+
 --- Titles of the packs that are unlocked now but were in `locked_before`.
 function Collection:newlyUnlocked(locked_before)
     local titles = {}

@@ -1,6 +1,7 @@
 --[[
 Paints a puzzle picture at a whole-pixel scale: the finished picture in its
-reveal tones, or a board in play (filled cells only) as a thumbnail. Runs of
+reveal tones, or a board in play (its faint grid and the filled cells) as a
+thumbnail. Runs of
 equal tone in a row become one rect, so even a large reveal is cheap.
 
 Tones are compared as plain numbers and only turned into colors to paint:
@@ -29,6 +30,15 @@ local function toneAt(puzzle, opts, i)
     return puzzle.shade and puzzle.shade[i] or 0
 end
 
+--- A faint empty grid of the puzzle's size, centered in box: the board waiting to be played.
+function Picture.grid(bb, puzzle, box)
+    local cell, ox, oy = Layout.fitPicture(puzzle.w, puzzle.h, box.w, box.h)
+    if cell < 2 then return end
+    local x0, y0, hair = box.x + ox, box.y + oy, Theme.line.hair
+    for k = 0, puzzle.w do bb:paintRect(x0 + k * cell, y0, hair, puzzle.h * cell, Theme.FAINT) end
+    for k = 0, puzzle.h do bb:paintRect(x0, y0 + k * cell, puzzle.w * cell, hair, Theme.FAINT) end
+end
+
 --[[
 Paints into box {x, y, w, h}, centered. opts.cells: a board's cells to draw
 instead of the solution. Returns the painted rect and the scale, or nil when
@@ -44,6 +54,7 @@ function Picture.paint(bb, puzzle, box, opts)
     -- Less than a tile's inner margin, so the border never covers a tile frame.
     local pad = Theme.space.xs
     if original then bb:paintRect(x0 - pad, y0 - pad, w * scale + 2 * pad, h * scale + 2 * pad, Theme.WHITE) end
+    if opts.cells then Picture.grid(bb, puzzle, box) end
     for r = 1, h do
         local y = y0 + (r - 1) * scale
         local c = 1

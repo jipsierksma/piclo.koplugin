@@ -102,12 +102,12 @@ local function roomBelow(geom, H)
 end
 
 --[[
-Fits the board with room under it for the reveal plus one extra line: the
-least the area has to give up at the bottom, found by bisection (giving up
-more only moves the board up or shrinks it). Returns nil if no amount works.
+Fits the board with `need` pixels free under it, down to the screen's
+bottom edge: the least the area has to give up at the bottom, found by
+bisection (giving up more only moves the board up or shrinks it). Returns
+nil if no amount works.
 ]]
-local function fitWithRoom(puzzle, area, H)
-    local need = Placement.revealRoom(1)
+local function fitWithRoom(puzzle, area, H, need)
     local function try(cut)
         local g = fit(puzzle, { x = area.x, y = area.y, w = area.w, h = area.h - cut })
         return g and roomBelow(g, H) >= need and g or nil
@@ -122,17 +122,14 @@ local function fitWithRoom(puzzle, area, H)
 end
 
 --[[
-Returns { landscape, rail_side, toolbar = rect, area = rect, geom } for a
-puzzle on a W x H screen. opts (optional):
-  rail_side    "right" (default) or "left": where the landscape toolbar goes
-  unlock_room  leave room for the reveal's unlock line (portrait only)
-geom is nil (and a warning logged) when the board doesn't fit.
+The screen's frame around the board: { landscape, rail_side, toolbar = rect,
+area = rect } with the area the board may use. rail_side is "right"
+(default) or "left": where the landscape toolbar goes.
 ]]
-function Placement.compute(puzzle, W, H, opts)
-    opts = opts or {}
+function Placement.frame(W, H, rail_side)
     local top, pad, bar = Theme.header_h, Theme.space.l, Theme.toolbar_h
     local landscape = W > H
-    local rail_side = opts.rail_side == "left" and "left" or "right"
+    rail_side = rail_side == "left" and "left" or "right"
     local toolbar, area
     if landscape then
         local left = rail_side == "left"
@@ -142,16 +139,48 @@ function Placement.compute(puzzle, W, H, opts)
         toolbar = { x = 0, y = H - bar, w = W, h = bar }
         area = { x = pad, y = top + pad, w = W - 2 * pad, h = H - top - bar - 2 * pad }
     end
+    return { landscape = landscape, rail_side = rail_side, toolbar = toolbar, area = area }
+end
+
+--[[
+Returns the frame (see above) plus geom, for a puzzle on a W x H screen.
+opts (optional):
+  rail_side    as for frame
+  unlock_room  leave room for the reveal's unlock line too (portrait only)
+  note_h       a practice board: leave this much room under the grid for the
+               guide's text; placement.note is then its rect, area-wide
+In portrait the board always leaves room under it for the reveal's buttons,
+so the picture can land exactly on the grid. Most boards have that room
+anyway; a large-celled one (a 7x7 on a tall screen) moves up or shrinks a
+little.
+geom is nil (and a warning logged) when the board doesn't fit.
+]]
+function Placement.compute(puzzle, W, H, opts)
+    opts = opts or {}
+    local placement = Placement.frame(W, H, opts.rail_side)
+    local landscape, area = placement.landscape, placement.area
     local geom = fit(puzzle, area)
-    if geom and opts.unlock_room and not landscape and roomBelow(geom, H) < Placement.revealRoom(1) then
-        geom = fitWithRoom(puzzle, area, H) or geom
+    local need
+    if opts.note_h then
+        -- Down to the toolbar in portrait, the screen's edge in landscape.
+        need = opts.note_h + 2 * Theme.space.l + (landscape and 0 or Theme.toolbar_h)
+    elseif not landscape then
+        need = Placement.revealRoom(opts.unlock_room and 1 or 0)
+    end
+    if geom and need and roomBelow(geom, H) < need then
+        geom = fitWithRoom(puzzle, area, H, need) or geom
+    end
+    if geom and opts.note_h then
+        placement.note = { x = area.x, y = geom.grid_y + geom.rows * geom.cell + Theme.space.l,
+            w = area.w, h = opts.note_h }
     end
     if not geom then
         logger.warn("piclo: board does not fit in", area.w, "x", area.h)
     elseif geom.cell < Theme.min_cell then
         logger.info("piclo: small cells", geom.cell, "px for", puzzle.id)
     end
-    return { landscape = landscape, rail_side = rail_side, toolbar = toolbar, area = area, geom = geom }
+    placement.geom = geom
+    return placement
 end
 
 --- The grid's cells as a picture box {x, y, w, h}, one cell per pixel.

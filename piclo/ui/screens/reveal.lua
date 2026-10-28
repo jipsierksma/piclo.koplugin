@@ -12,8 +12,10 @@ landscape. If the title doesn't fit above, landscape stacks it beside too. Only 
 grid does a general layout take over.
 
 After a solve there is one action, back to the collection, where the new
-picture is marked and "Next puzzle" waits. Under the time a line says how
-far the pack is ("4 of 10 in In the Woods"), when there is room for it.
+picture is marked. When the solve finished its pack, "Next pack" (the main
+action) opens the next pack's collection instead. Under the time a line
+says how far the pack is ("4 of 10 in In the Woods"), when there is room
+for it.
 ]]
 
 local T = require("ffi/util").template
@@ -49,7 +51,8 @@ end
 
 --[[
 data: mode ("solved" | "view"), puzzle, elapsed, best, result
-({first, new_best}), revealed, next (puzzle or nil), unlocked (pack titles),
+({first, new_best}), revealed, next_pack (pack id, when the pack is finished),
+unlocked (pack titles),
 unlock_room (the board left room for an unlock line; the picture must match)
 ]]
 function RevealScreen.new(opts)
@@ -62,9 +65,15 @@ function RevealScreen.new(opts)
         self.secondary = TextButton.new{ text = _("Back to collection"),
             on_tap = function() app:backToCollection(p.pack_id) end }
         self.buttons = { self.primary, self.secondary }
+    elseif data.next_pack then
+        self.primary = TextButton.new{ text = _("Next pack"), primary = true,
+            on_tap = function() app:showNextPack(data.next_pack) end }
+        self.secondary = TextButton.new{ text = _("Back to collection"),
+            on_tap = function() app:backToCollection(p.pack_id, p.id) end }
+        self.buttons = { self.primary, self.secondary }
     else
         self.primary = TextButton.new{ text = _("Back to collection"), primary = true,
-            on_tap = function() app:backToCollection(p.pack_id, { marked = p.id, next = data.next }) end }
+            on_tap = function() app:backToCollection(p.pack_id, p.id) end }
         self.buttons = { self.primary }
     end
     return self
