@@ -29,10 +29,10 @@ describe("title screen", function()
         assert.are.equal("start", home.spot.kind)
         assert.are.equal("Start", home.primary.text)
         assert.are.equal("First Steps", home.card_title.widget.text)
-        assert.are.equal("8 pictures to discover", home.card_sub.widget.text)
+        assert.are.equal("4 pictures to discover", home.card_sub.widget.text)
         assert.is_not_nil(home.thumb)
         assert.is_nil(home.header)
-        assert.are.equal("0 of 30 solved", home.packs_row.aside.widget.text)
+        assert.are.equal("0 of 23 solved", home.packs_row.aside.widget.text)
         assert.are.equal(4, #home.rows)
         assert.is_false(home.close_row.chevron)
         shot("home_start")
@@ -50,14 +50,14 @@ describe("title screen", function()
         local home = host.screen
         assert.are.equal("Play", home.primary.text)
         assert.are.equal("First Steps · 2", home.card_title.widget.text)
-        assert.are.equal("5×5 · New", home.card_sub.widget.text)
+        assert.are.equal("7×7 · New", home.card_sub.widget.text)
         -- A faint empty 5x5 grid in the card: its lines are gray, its cells white.
         H.settle()
         local th = home.thumb
         local found = false
         for x = th.x + 1, th.x + th.w - 2 do
             local v = require("device").screen.bb:get(x, th.y + math.floor(th.h / 2))
-            if v == 0xDD then found = true end
+            if v == 0xAA then found = true end
         end
         assert.is_true(found, "faint grid lines in the card")
         shot("home_play")
@@ -87,7 +87,7 @@ describe("title screen", function()
         tapRect(home.packs_row.rect)
         assert.are.equal("packs", top())
         for __, row in ipairs(host.screen.rows) do assert.is_true(row.done) end
-        assert.are.equal("30 of 30 solved", host.screen.summary.widget.text)
+        assert.are.equal("23 of 23 solved", host.screen.summary.widget.text)
         shot("packs_complete")
         clean()
     end)

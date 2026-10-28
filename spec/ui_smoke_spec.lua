@@ -75,7 +75,7 @@ describe("launching", function()
         assert.are.equal(3, #rows)
         assert.is_true(rows[1].info.unlocked)
         assert.is_false(rows[2].info.unlocked)
-        assert.are.equal("0 of 30 solved", host.screen.summary.widget.text)
+        assert.are.equal("0 of 23 solved", host.screen.summary.widget.text)
         shot("packs")
         clean()
         tapRect(rows[2].rect)
@@ -133,7 +133,7 @@ describe("collection", function()
         tapRect(host.screen.rows[1].rect)
         local screen = host.screen
         assert.are.equal(1, screen.grid.pages)
-        assert.are.equal(8, #screen.tiles)
+        assert.are.equal(4, #screen.tiles)
         -- Unplayed tiles: "???" in the box, the number underneath.
         assert.are.equal("3", screen.tiles[3].caption.widget.text)
         assert.are.equal("???", screen.tiles[3].unknown.widget.text)
@@ -220,7 +220,7 @@ describe("solving", function()
         assert.truthy(reveal.summary.widget.text:find("Solved in"))
         assert.are.equal("Back to collection", reveal.primary.text)
         -- How far the pack is, under the time.
-        assert.are.equal("1 of 8 in First Steps", reveal.progress.widget.text)
+        assert.are.equal("1 of 4 in First Steps", reveal.progress.widget.text)
         local shown = false
         for _, pos in ipairs(reveal.text_pos) do
             if pos.item == reveal.progress then shown = true end
@@ -229,30 +229,27 @@ describe("solving", function()
         shot("reveal_portrait")
         clean()
         assert.is_true(app:progress():isSolved(game.puzzle.id))
-        -- Back in the collection: the new picture framed, "Next puzzle" offered.
+        -- Back in the collection: the new picture framed, the next one a tile away.
         tapRect(reveal.primary.rect)
         assert.are.equal("pack", top())
         local pack = host.screen
         assert.are.equal(game.puzzle.id, pack.marked)
-        assert.are.equal("Next puzzle", pack.next_btn.text)
-        local last = pack.tiles[#pack.tiles].caption_rect
-        assert.is_true(last.y + last.h <= pack.next_btn.rect.y)
+        assert.is_nil(pack.next_btn)
         shot("pack_after_solve")
         clean()
-        tapRect(pack.next_btn.rect)
+        tapRect(pack.tiles[2].rect)
         assert.are.equal("game", top())
         assert.are.equal(2, app.game.puzzle.number)
         -- Leaving the next puzzle unsolved: the collection is back to normal.
         app:back()
         assert.are.equal("pack", top())
         assert.is_nil(host.screen.marked)
-        assert.is_nil(host.screen.next_btn)
     end)
 
     it("announces a newly unlocked pack", function()
-        local _, screen, game = play(1, 5)
+        local _, screen, game = play(1, 3)
         local progress = app:progress()
-        for k = 1, 4 do progress:markSolved(app:catalog().packs[1].puzzles[k].id, 10) end
+        for k = 1, 2 do progress:markSolved(app:catalog().packs[1].puzzles[k].id, 10) end
         solveByTapping(screen, game)
         UIManager:runScheduled()
         assert.are.same({ "Around the House" }, host.screen.data.unlocked)
@@ -262,6 +259,40 @@ describe("solving", function()
         assert.are.equal("pack", top())
         app:back()
         assert.is_true(host.screen.rows[2].info.unlocked)
+    end)
+
+    it("offers the next pack on the reveal that finishes a pack", function()
+        local _, screen, game = play(1, 4)
+        local puzzles = app:catalog().packs[1].puzzles
+        for k = 1, 3 do app:progress():markSolved(puzzles[k].id, 10) end
+        solveByTapping(screen, game)
+        UIManager:runScheduled()
+        local reveal = host.screen
+        assert.are.equal("reveal", top())
+        assert.are.equal("Next pack", reveal.primary.text)
+        assert.are.equal("Back to collection", reveal.secondary.text)
+        shot("reveal_next_pack")
+        clean()
+        tapRect(reveal.primary.rect)
+        assert.are.equal("pack", top())
+        assert.are.equal("house", host.screen.pack.id)
+        app:back()
+        assert.are.equal("packs", top())
+        app:back()
+        assert.are.equal("home", top())
+    end)
+
+    it("doesn't offer a next pack when everything is solved", function()
+        local _, screen, game = play(3, 8)
+        for __, pack in ipairs(app:catalog().packs) do
+            for __, p in ipairs(pack.puzzles) do
+                if p ~= game.puzzle then app:progress():markSolved(p.id, 10) end
+            end
+        end
+        solveByTapping(screen, game)
+        UIManager:runScheduled()
+        assert.are.equal(1, #host.screen.buttons)
+        assert.are.equal("Back to collection", host.screen.primary.text)
     end)
 
     it("drops a pending reveal when leaving during the pause", function()
@@ -330,9 +361,9 @@ describe("reveal placement", function()
             end
         end
         if pi == 1 then
-            solveOthers(1, 4)
+            solveOthers(1, 2)
         else
-            solveOthers(1, 5)
+            solveOthers(1, 3)
             solveOthers(2, 7)
         end
     end

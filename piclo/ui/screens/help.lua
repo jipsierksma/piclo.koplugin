@@ -3,7 +3,8 @@
 toolbar's icons next to their names (under the text that mentions them), laid out
 into pages that turn with swipes and the page-turn keys. On the first run it
 is an introduction rather than a submenu: no back button, and a "Got it"
-button to move on.
+button to move on. "Try a practice puzzle" opens a guided practice board
+(quiet beside "Got it" on the first run, a pill on its own otherwise).
 ]]
 
 local TextBoxWidget = require("ui/widget/textboxwidget")
@@ -49,8 +50,17 @@ function HelpScreen.new(opts)
     local self = setmetatable({ app = app, page = 1, widgets = {} }, HelpScreen)
     local back = function() app:back() end
     self.header = HeaderBar.new{ title = _("How to play"), on_back = (not opts.first_run) and back or nil }
+    if #app:lessons() > 0 then
+        self.practice_btn = TextButton.new{ text = _("Try a practice puzzle"), primary = not opts.first_run,
+            on_tap = function() app:startPractice(1) end }
+    end
     if opts.first_run then
         self.done_btn = TextButton.new{ text = _("Got it"), primary = true, on_tap = back }
+    end
+    -- Left to right, the main one last.
+    self.buttons = {}
+    for __, b in ipairs({ self.practice_btn or false, self.done_btn or false }) do
+        if b then self.buttons[#self.buttons + 1] = b end
     end
     return self
 end
@@ -65,7 +75,7 @@ function HelpScreen:freeWidgets()
 end
 
 function HelpScreen:free()
-    if self.done_btn then self.done_btn:free() end
+    for __, b in ipairs(self.buttons) do b:free() end
     self.header:freeText()
     self:freeWidgets()
 end
@@ -146,19 +156,18 @@ function HelpScreen:layout(dimen)
     self.x = math.floor((W - width) / 2)
     local top = Theme.header_h + Theme.space.l
     local bottom = H - Theme.touch - Theme.space.s
-    if self.done_btn then
-        local b = self.done_btn
-        local bw = b:standardWidth(W - 2 * m)
-        b:setRect(math.floor((W - bw) / 2), H - Theme.touch - Theme.space.l, bw, Theme.touch)
-        bottom = b.rect.y - Theme.touch
-    end
+    if #self.buttons > 0 then bottom = self:layoutButtons(W, H, m) - Theme.touch end
     self.pages = { {} }
+    local items, blocks = content(), {}
+    for k, item in ipairs(items) do blocks[k] = self:block(item, width) end
     local y = top
-    for k, item in ipairs(content()) do
-        local b = self:block(item, width)
+    for k, item in ipairs(items) do
+        local b = blocks[k]
         local gap = (k == 1) and 0 or b.gap
-        -- Keep a heading with the block after it.
-        if y + gap + b.h > bottom or (item.kind == "heading" and y + gap + b.h * 3 > bottom) then
+        -- A heading only goes where the block after it fits too.
+        local need = b.h
+        if item.kind == "heading" and blocks[k + 1] then need = need + blocks[k + 1].gap + blocks[k + 1].h end
+        if y + gap + need > bottom and #self.pages[#self.pages] > 0 then
             self.pages[#self.pages + 1] = {}
             y, gap = top, 0
         end
@@ -176,11 +185,39 @@ function HelpScreen:layout(dimen)
     end
 end
 
+--[[
+The buttons at the bottom: side by side (the main one on the right) when
+they fit, else stacked with the main one lowest. Returns the top of the
+topmost.
+]]
+function HelpScreen:layoutButtons(W, H, m)
+    local btns, gap = self.buttons, Theme.space.l
+    local widths, total = {}, (#self.buttons - 1) * gap
+    for k, b in ipairs(btns) do
+        widths[k] = b:standardWidth(W - 2 * m)
+        total = total + widths[k]
+    end
+    local y = H - Theme.touch - Theme.space.l
+    if total <= W - 2 * m then
+        local x = math.floor((W - total) / 2)
+        for k, b in ipairs(btns) do
+            b:setRect(x, y, widths[k], Theme.touch)
+            x = x + widths[k] + gap
+        end
+        return y
+    end
+    for k = #btns, 1, -1 do
+        btns[k]:setRect(math.floor((W - widths[k]) / 2), y, widths[k], Theme.touch)
+        if k > 1 then y = y - Theme.touch - Theme.space.s end
+    end
+    return y
+end
+
 function HelpScreen:paint(bb)
     self.header:paint(bb)
     for __, e in ipairs(self.pages[self.page]) do e.block.paint(bb, self.x, e.y) end
     if self.pager then self.pager:paintIn(bb, self.pager_rect, "center") end
-    if self.done_btn then self.done_btn:paint(bb) end
+    for __, b in ipairs(self.buttons) do b:paint(bb) end
 end
 
 function HelpScreen:changePage(delta)
@@ -193,8 +230,8 @@ end
 
 function HelpScreen:onTap(ges)
     local btn = self.header:buttonAt(ges.pos.x, ges.pos.y)
-    if not btn and self.done_btn and self.done_btn:contains(ges.pos.x, ges.pos.y) then
-        btn = self.done_btn
+    for __, b in ipairs(self.buttons) do
+        if not btn and b:contains(ges.pos.x, ges.pos.y) then btn = b end
     end
     if btn then
         Refresh.press(self.window, btn.rect, function(bb) btn:paint(bb, true) end)

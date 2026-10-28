@@ -74,7 +74,10 @@ describe("settings screen", function()
                     end
                 end
             end
-            if size[1] == 1264 then shot("settings_portrait") end
+            if size[1] == 1264 then
+                assert.are.equal(1, #screen.pages, "one page on the Oasis")
+                shot("settings_portrait")
+            end
             clean()
         end)
     end
@@ -86,7 +89,8 @@ describe("settings screen", function()
         assert.is_true(entry(screen, "show_timer").control.on)
         choose(screen, "mistakes", "Instant")
         assert.are.equal("instant", H.app:setting("mistakes"))
-        assert.are.equal("Wrong fills are turned into crosses", entry(screen, "mistakes").note.widget.text)
+        assert.are.equal("instant", entry(screen, "mistakes").control.selected)
+        assert.is_nil(entry(screen, "mistakes").note, "the control says it all")
         choose(screen, "deghost_every", "Never")
         assert.are.equal(0, H.app:setting("deghost_every"))
         H.host:handleEvent(Event:new("FlushSettings"))

@@ -13,6 +13,11 @@ Input:
 Short messages ("No mistakes so far") replace the header title until the
 next move, rather than popping up. The optional timer in the header moves
 on once a minute.
+
+A practice board (from How to play) has a guide under the grid instead of
+a menu and a timer: it highlights the clues of the lines its step is about,
+marks squares that don't fit the picture, and ends with a button instead
+of the reveal. Nothing about it is saved.
 ]]
 
 local T = require("ffi/util").template
@@ -20,6 +25,8 @@ local UIManager = require("ui/uimanager")
 local _ = require("gettext")
 local BoardPlacement = require("piclo/ui/board_placement")
 local BoardWidget = require("piclo/ui/board_widget")
+local Coach = require("piclo/coach")
+local CoachPanel = require("piclo/ui/coach_panel")
 local Game = require("piclo/game")
 local GameMenu = require("piclo/ui/screens/game_menu")
 local HeaderBar = require("piclo/ui/components/header_bar")
@@ -36,7 +43,8 @@ GameScreen.__index = GameScreen
 opts: app, game, title (header text), deghost_every (edits between
 ghost-clearing flashes, nil = never), highlight_done, hold_action
 ("opposite" | "cross"), show_timer, rail_side, unlock_room (solving will
-unlock a pack: leave room for the reveal's extra line)
+unlock a pack: leave room for the reveal's extra line), practice (a guided
+board: { coach, button = text, on_button })
 ]]
 function GameScreen.new(opts)
     local self = setmetatable({
@@ -50,10 +58,15 @@ function GameScreen.new(opts)
         unlock_room = opts.unlock_room,
         edits = 0,
     }, GameScreen)
+    if opts.practice then
+        self.coach = opts.practice.coach
+        self.panel = CoachPanel.new(opts.practice)
+    end
     self.header = HeaderBar.new{
         title = opts.title,
         on_back = function() self.app:back() end,
-        right = IconButton.new{ icon = "more", on_tap = function() GameMenu.open(self) end },
+        right = (not self.panel) and IconButton.new{ icon = "more", on_tap = function() GameMenu.open(self) end }
+            or nil,
         aside = self:timerText(),
     }
     self.board = BoardWidget.new{ game = self.game, show_crosses = not self.game.solved,
@@ -77,24 +90,68 @@ function GameScreen:free()
     self.board:free()
     self.header:freeText()
     self.toolbar:free()
+    if self.panel then self.panel:free() end
 end
 
 -- Layout ----------------------------------------------------------------
 
 function GameScreen:layout(dimen)
     self.dimen = dimen
-    local placement = BoardPlacement.compute(self.game.puzzle, dimen.w, dimen.h,
-        { rail_side = self.rail_side, unlock_room = self.unlock_room })
+    local opts = { rail_side = self.rail_side, unlock_room = self.unlock_room }
+    if self.panel then
+        local frame = BoardPlacement.frame(dimen.w, dimen.h, self.rail_side)
+        opts.note_h = self.panel:measure(CoachPanel.textWidth(frame.area.w))
+    end
+    local placement = BoardPlacement.compute(self.game.puzzle, dimen.w, dimen.h, opts)
     self.landscape = placement.landscape
     self.header:layout(0, 0, dimen.w)
     self.board:setGeometry(placement.geom)
     self.toolbar:layout(placement.toolbar, placement.landscape, placement.rail_side)
+    if self.panel then
+        self.panel:setRect(placement.note or { x = 0, y = dimen.h, w = dimen.w, h = 0 })
+        local text, done, lines = self:guideState()
+        self.board:setGuide(lines)
+        self.panel:setText(text, done)
+    end
 end
 
 function GameScreen:paint(bb)
     self.header:paint(bb)
     self.board:paint(bb)
     self.toolbar:paint(bb)
+    if self.panel then self.panel:paint(bb) end
+end
+
+-- Practice ----------------------------------------------------------------
+
+-- The guide's text, whether it is the closing one, the lines to highlight
+-- and whether the board has a mistake, for the board as it is now.
+function GameScreen:guideState()
+    local coach, cells = self.coach, self.game.board.cells
+    if self.game.solved then return coach:doneText(), true, nil, false end
+    coach:update(cells)
+    if coach:hasMistake(cells) then return Coach.mistakeText(), false, coach:lines(), true end
+    return coach:text(), false, coach:lines(), false
+end
+
+--- After a move on a practice board: the next step's text and lines, and any mistake marked.
+function GameScreen:guide()
+    local text, done, lines, mistake = self:guideState()
+    local report = self.board:setGuide(lines)
+    if mistake then
+        for __, i in ipairs(self.game:check().cells) do report.cells[#report.cells + 1] = i end
+    end
+    local rects = self.board:changeRects(report)
+    local panel = self.panel
+    local changed = text ~= panel.text
+    if changed then
+        panel:setText(text, done)
+        rects[#rects + 1] = panel.rect
+    end
+    Refresh.regions(self.window, "ui", rects, function(bb)
+        self.board:paintChanges(bb, report)
+        if changed then panel:paint(bb) end
+    end)
 end
 
 -- Changes ---------------------------------------------------------------
@@ -132,6 +189,7 @@ function GameScreen:apply(report, extra)
     if not report then return end
     self.app:onMove(self.game, report)
     self.edits = self.edits + 1
+    if self.panel and not report.solved then self:guide() end
     if report.solved then
         self:onSolved()
     elseif self.deghost_every and self.edits % self.deghost_every == 0 then
@@ -169,13 +227,22 @@ end
 
 -- Solved: show the finished grid without crosses for a moment; the app then
 -- moves on to the reveal screen, which puts the picture on this same grid.
+-- A practice board stays, with the guide's closing line and button.
 function GameScreen:onSolved()
     self.board.show_crosses = false
-    Refresh.regions(self.window, "ui", { self.board:boardRect(), self.toolbar.rect }, function(bb)
+    local rects = { self.board:boardRect(), self.toolbar.rect }
+    local panel = self.panel
+    if panel then
+        self.board:setGuide(nil)
+        panel:setText(self.coach:doneText(), true)
+        rects[#rects + 1] = panel.rect
+    end
+    Refresh.regions(self.window, "ui", rects, function(bb)
         self.board:paint(bb)
         self.toolbar:paint(bb)
+        if panel then panel:paint(bb) end
     end)
-    self.app:onSolved(self.game)
+    if not panel then self.app:onSolved(self.game) end
 end
 
 -- Timer -----------------------------------------------------------------
@@ -234,7 +301,8 @@ function GameScreen:onTap(ges)
     local x, y = ges.pos.x, ges.pos.y
     local btn = self.header:buttonAt(x, y)
     if self.game.solved then
-        if btn and btn == self.header.back then self:press(btn) end
+        btn = (btn == self.header.back) and btn or (self.panel and self.panel:buttonAt(x, y))
+        if btn then self:press(btn) end
         return
     end
     if btn then return self:press(btn) end

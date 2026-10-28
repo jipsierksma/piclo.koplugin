@@ -24,7 +24,6 @@ local Format = require("piclo/util/format")
 local N_ = _.ngettext
 local Icons = require("piclo/ui/icons")
 local Label = require("piclo/ui/components/label")
-local Layout = require("piclo/ui/layout")
 local ListRow = require("piclo/ui/components/list_row")
 local Picture = require("piclo/ui/picture")
 local Refresh = require("piclo/ui/refresh")
@@ -239,15 +238,6 @@ function HomeScreen:layout(dimen)
     end
 end
 
---- A faint empty grid of the puzzle's size, the board waiting to be played.
-function HomeScreen:paintEmptyGrid(bb, p, box)
-    local cell, ox, oy = Layout.fitPicture(p.w, p.h, box.w, box.h)
-    if cell < 2 then return end
-    local x0, y0, hair = box.x + ox, box.y + oy, Theme.line.hair
-    for k = 0, p.w do bb:paintRect(x0 + k * cell, y0, hair, p.h * cell, Theme.FAINT) end
-    for k = 0, p.h do bb:paintRect(x0, y0 + k * cell, p.w * cell, hair, Theme.FAINT) end
-end
-
 function HomeScreen:paintThumb(bb)
     local th, spot = self.thumb, self.spot
     -- A thin frame: the heavy one means "just solved" in the collection.
@@ -255,10 +245,11 @@ function HomeScreen:paintThumb(bb)
     local g = Theme.space.m
     local inner = { x = th.x + g, y = th.y + g, w = th.w - 2 * g, h = th.h - 2 * g }
     if spot.kind == "continue" then
+        -- The board as you left it.
         Picture.paint(bb, spot.puzzle, inner, { cells = spot.cells })
     elseif spot.kind == "play" or spot.kind == "start" then
         -- The board you're about to open, still empty.
-        self:paintEmptyGrid(bb, spot.puzzle, inner)
+        Picture.grid(bb, spot.puzzle, inner)
     elseif spot.puzzle then
         Picture.paint(bb, spot.puzzle, inner)
     end

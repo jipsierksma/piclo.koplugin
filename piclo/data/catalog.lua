@@ -19,7 +19,7 @@ Catalog.__index = Catalog
 -- v1 shows at most 15x15; bigger boards need the pan/zoom viewport.
 Catalog.MAX_SIZE = 15
 
-local function loadSandboxed(path)
+function Catalog.loadSandboxed(path)
     local env = { _ = _ }
     local chunk, err
     if setfenv then
@@ -110,6 +110,8 @@ function Catalog:addPack(data, name)
         title = data.title,
         license = data.license,
         credit = data.credit,
+        -- A story pack is played in its own order, not easy-to-hard.
+        story = data.story == true,
         puzzles = {},
     }
     self:addPuzzles(pack, data.puzzles)
@@ -128,13 +130,13 @@ empty); catalog.problems lists everything that was skipped.
 ]]
 function Catalog.load(dir)
     local self = Catalog.new()
-    local index, err = loadSandboxed(dir .. "/index.lua")
+    local index, err = Catalog.loadSandboxed(dir .. "/index.lua")
     if not index then
         self:problem("cannot read pack index: " .. tostring(err))
         return self
     end
     for __, name in ipairs(index) do
-        local data, perr = loadSandboxed(dir .. "/" .. tostring(name) .. ".lua")
+        local data, perr = Catalog.loadSandboxed(dir .. "/" .. tostring(name) .. ".lua")
         if data then
             self:addPack(data, name)
         else

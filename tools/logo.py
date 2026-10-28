@@ -61,13 +61,15 @@ def svg(grid):
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">']
     thin = " ".join(f"M{c * CELL} 0V{H}" for c in range(1, w)) + " " + \
         " ".join(f"M0 {r * CELL}H{W}" for r in range(1, h))
-    parts.append(f'<path fill="none" stroke="#DDDDDD" stroke-width="2" d="{thin}"/>')
-    parts.append(f'<rect x="1" y="1" width="{W - 2}" height="{H - 2}" fill="none" stroke="#AAAAAA" stroke-width="2"/>')
+    # Theme.FAINT, thick enough to survive scaling down: e-ink washes out
+    # thin light lines.
+    parts.append(f'<path fill="none" stroke="#AAAAAA" stroke-width="3" d="{thin}"/>')
+    parts.append(f'<rect x="1.5" y="1.5" width="{W - 3}" height="{H - 3}" fill="none" stroke="#AAAAAA" stroke-width="3"/>')
     i0, i1 = int(CELL * 0.3), int(CELL * 0.7)
     xs = " ".join(f"M{c * CELL + i0} {r * CELL + i0}L{c * CELL + i1} {r * CELL + i1}"
                   f"M{c * CELL + i1} {r * CELL + i0}L{c * CELL + i0} {r * CELL + i1}"
                   for r, c in crosses(grid))
-    parts.append(f'<path fill="none" stroke="#777777" stroke-width="4" stroke-linecap="round" d="{xs}"/>')
+    parts.append(f'<path fill="none" stroke="#555555" stroke-width="5" stroke-linecap="round" d="{xs}"/>')
     s = CELL - 2 * FILL_GAP
     fills = " ".join(f"M{c * CELL + FILL_GAP} {r * CELL + FILL_GAP}h{s}v{s}h-{s}z"
                      for r in range(h) for c in range(w) if grid[r][c] == "#")

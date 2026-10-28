@@ -81,6 +81,16 @@ describe("lines and cells", function()
         assert.are.equal(4, g:colLineWeight(10))
     end)
 
+    it("only splits lines of 10 or more into blocks of 5", function()
+        local small = fit(7, 8, 600, 800)
+        for k = 1, 6 do assert.are.equal(1, small:colLineWeight(k)) end
+        for k = 1, 7 do assert.are.equal(1, small:rowLineWeight(k)) end
+        assert.is_false(Geometry.blockLine(5, 8))
+        assert.is_true(Geometry.blockLine(5, 15))
+        assert.is_true(Geometry.blockLine(10, 15))
+        assert.is_false(Geometry.blockLine(15, 15))
+    end)
+
     it("keeps cell insides between their lines", function()
         for c = 1, 10 do
             local x, _, w = g:cellInner(1, c)

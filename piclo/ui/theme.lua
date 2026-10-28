@@ -16,11 +16,12 @@ local Theme = {}
 
 -- Tones. Three grays in the UI: a light tint for tracks and pressed states,
 -- a faint gray for guide lines (empty grids, as in the logo), and a
--- secondary text gray that is still easy to read.
+-- secondary text gray that is still easy to read. The faint gray is darker
+-- than it looks on a monitor: e-ink washes out thin light lines.
 Theme.WHITE = Blitbuffer.COLOR_WHITE
 Theme.BLACK = Blitbuffer.COLOR_BLACK
 Theme.TINT = Blitbuffer.COLOR_GRAY_E
-Theme.FAINT = Blitbuffer.COLOR_GRAY_D
+Theme.FAINT = Blitbuffer.COLOR_GRAY
 Theme.SECONDARY = Blitbuffer.COLOR_GRAY_6
 
 -- Reveal tones 0..4: e-ink native gray levels, so no dithering is needed.

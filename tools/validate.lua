@@ -65,7 +65,8 @@ for _, pack in ipairs(catalog.packs) do
             printStuck(p, m.result.cells)
         end
     end
-    for _, k in ipairs(Difficulty.outOfOrder(pack, measures)) do
+    -- A story pack keeps its story order, not easy-to-hard.
+    for _, k in ipairs(pack.story and {} or Difficulty.outOfOrder(pack, measures)) do
         io.write(string.format("warn %s: #%d is easier than #%d (see make stats)\n",
             pack.id, k, k - 1))
     end
