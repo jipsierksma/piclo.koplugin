@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Piclo\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-15 18:08+0200\n"
+"POT-Creation-Date: 2026-10-28 23:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,27 +18,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: main.lua:30 main.lua:43
-msgid "Piclo"
+#: main.lua:32 main.lua:47
+msgid "Piclo puzzles"
 msgstr ""
 
-#: piclo/app.lua:139 piclo/ui/screens/home.lua:127
+#: piclo/app/routes.lua:71 piclo/ui/screens/home.lua:128
 msgid "%1 · %2"
 msgstr ""
 
-#: piclo/app.lua:158
+#: piclo/app/routes.lua:90
 msgid "Practice %1 of %2"
 msgstr ""
 
-#: piclo/app.lua:164
+#: piclo/app/routes.lua:96
+msgctxt "Piclo"
 msgid "Done"
 msgstr ""
 
-#: piclo/app.lua:164
+#: piclo/app/routes.lua:96
 msgid "Next practice"
 msgstr ""
 
-#: piclo/coach.lua:129
+#: piclo/coach.lua:131
 msgid ""
 "The marked square doesn't fit the numbers. Tap it to change it, or use Undo."
 msgstr ""
@@ -224,226 +225,236 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: piclo/ui/screens/game.lua:212
-msgid "Nothing left to hint"
+#: piclo/ui/screens/game.lua:194
+msgid "That square stays empty"
 msgstr ""
 
 #: piclo/ui/screens/game.lua:214
+msgid "Nothing left to hint"
+msgstr ""
+
+#: piclo/ui/screens/game.lua:216
 msgid "Fix the marked square first"
 msgstr ""
 
-#: piclo/ui/screens/game.lua:222
+#: piclo/ui/screens/game.lua:224
 msgid "No mistakes so far"
 msgstr ""
 
-#: piclo/ui/screens/game.lua:224
+#: piclo/ui/screens/game.lua:226
 msgid "1 square is wrong"
 msgid_plural "%1 squares are wrong"
 msgstr[0] ""
 msgstr[1] ""
 
-#: piclo/ui/screens/game.lua:254
+#: piclo/ui/screens/game.lua:256
 msgid "%1 min"
 msgstr ""
 
-#: piclo/ui/screens/game.lua:255
+#: piclo/ui/screens/game.lua:257
 msgid "%1 h %2 min"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:21
+#: piclo/ui/screens/game_menu.lua:22
 msgid "Restart this puzzle?"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:22
+#: piclo/ui/screens/game_menu.lua:23
 msgid "Your marks and time on this board will be cleared."
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:23
+#: piclo/ui/screens/game_menu.lua:24
+msgctxt "Piclo"
 msgid "Restart"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:34
+#: piclo/ui/screens/game_menu.lua:35
 msgid "Show the solution?"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:35
+#: piclo/ui/screens/game_menu.lua:36
 msgid ""
 "The picture joins your collection as revealed rather than solved. You can "
 "play it again any time."
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:36 piclo/ui/screens/game_menu.lua:52
+#: piclo/ui/screens/game_menu.lua:37 piclo/ui/screens/game_menu.lua:53
 msgid "Show solution"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:49
+#: piclo/ui/screens/game_menu.lua:50
 msgid "Played for %1"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:51
+#: piclo/ui/screens/game_menu.lua:52
 msgid "Restart puzzle"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:54 piclo/ui/screens/help.lua:52
-#: piclo/ui/screens/home.lua:54
+#: piclo/ui/screens/game_menu.lua:55 piclo/ui/screens/help.lua:55
+#: piclo/ui/screens/home.lua:55
 msgid "How to play"
 msgstr ""
 
-#: piclo/ui/screens/game_menu.lua:58 piclo/ui/screens/home.lua:55
-#: piclo/ui/screens/settings.lua:61
+#: piclo/ui/screens/game_menu.lua:59 piclo/ui/screens/home.lua:56
+#: piclo/ui/screens/settings.lua:62
 msgid "Settings"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:32
+#: piclo/ui/screens/help.lua:33
 msgid ""
 "Fill in squares to reveal a hidden picture. The numbers next to each row and "
 "above each column tell you which squares to fill."
 msgstr ""
 
-#: piclo/ui/screens/help.lua:33
+#: piclo/ui/screens/help.lua:34
 msgid "Reading the numbers"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:34
+#: piclo/ui/screens/help.lua:35
 msgid ""
 "Each number is a run of filled squares, in order from left to right or top "
 "to bottom. Runs are separated by at least one empty square. The row below "
 "reads 3 1: a run of three, a gap, then one more."
 msgstr ""
 
-#: piclo/ui/screens/help.lua:36
+#: piclo/ui/screens/help.lua:37
 msgid "Marking squares"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:37
+#: piclo/ui/screens/help.lua:38
 msgid ""
 "Choose Fill or Cross in the toolbar, then tap a square. Tap it again to "
 "clear it. Hold a square to use the other tool. Drag along a row or column to "
 "mark several squares at once. The page-turn buttons switch tools."
 msgstr ""
 
-#: piclo/ui/screens/help.lua:38 piclo/ui/screens/settings.lua:37
+#: piclo/ui/screens/help.lua:39 piclo/ui/screens/settings.lua:38
 msgid "Cross"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:38
+#: piclo/ui/screens/help.lua:39
 msgid "Fill"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:39
+#: piclo/ui/screens/help.lua:42
 msgid "Getting stuck"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:40
+#: piclo/ui/screens/help.lua:43
 msgid ""
 "The bulb in the toolbar fills in the next line that can be worked out and "
 "highlights its numbers. Undo takes the step back. In Settings you can also "
 "have mistakes checked, on request (with the magnifier) or as you play."
 msgstr ""
 
-#: piclo/ui/screens/help.lua:41
+#: piclo/ui/screens/help.lua:44
 msgid "Check"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:41
+#: piclo/ui/screens/help.lua:44
 msgid "Hint"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:41
+#: piclo/ui/screens/help.lua:44
 msgid "Undo"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:42
+#: piclo/ui/screens/help.lua:45
 msgid "Finishing"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:43
+#: piclo/ui/screens/help.lua:46
 msgid ""
-"A number turns gray once its run is complete. When every filled square is "
-"right, the picture appears and joins your collection. Solving puzzles in a "
-"pack unlocks the next one."
+"A number turns gray once its run is complete. Gray means the count fits, not "
+"that the run is in the right place. When every filled square is right, the "
+"picture appears and joins your collection. Solving puzzles in a pack unlocks "
+"the next one."
 msgstr ""
 
-#: piclo/ui/screens/help.lua:54
+#: piclo/ui/screens/help.lua:57
 msgid "Try a practice puzzle"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:58
+#: piclo/ui/screens/help.lua:61
+msgctxt "Piclo"
 msgid "Got it"
 msgstr ""
 
-#: piclo/ui/screens/help.lua:181 piclo/ui/screens/pack.lua:108
-#: piclo/ui/screens/packs.lua:113 piclo/ui/screens/settings.lua:202
+#: piclo/ui/screens/help.lua:175 piclo/ui/screens/pack.lua:109
+#: piclo/ui/screens/packs.lua:115 piclo/ui/screens/settings.lua:203
 msgid "%1 / %2"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:47
+#: piclo/ui/screens/home.lua:48
+msgctxt "Piclo"
 msgid "Continue"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:47
+#: piclo/ui/screens/home.lua:48
 msgid "Play"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:47
+#: piclo/ui/screens/home.lua:48
 msgid "Start"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:53 piclo/ui/screens/packs.lua:40
+#: piclo/ui/screens/home.lua:54 piclo/ui/screens/packs.lua:41
 msgid "Packs"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:57
+#: piclo/ui/screens/home.lua:58
 msgid "Close"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:85 piclo/ui/screens/packs.lua:22
+#: piclo/ui/screens/home.lua:86 piclo/ui/screens/packs.lua:23
 msgid "%1×%2"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:118
+#: piclo/ui/screens/home.lua:119
 msgid "Every picture found"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:118
+#: piclo/ui/screens/home.lua:119
 msgid "Play them again from Packs"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:124
+#: piclo/ui/screens/home.lua:125
 msgid "1 picture to discover"
 msgid_plural "%1 pictures to discover"
 msgstr[0] ""
 msgstr[1] ""
 
-#: piclo/ui/screens/home.lua:130
+#: piclo/ui/screens/home.lua:131
 msgid "%1 · %2 played"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:132
+#: piclo/ui/screens/home.lua:133
 msgid "%1 · New"
 msgstr ""
 
-#: piclo/ui/screens/home.lua:182 piclo/ui/screens/packs.lua:94
+#: piclo/ui/screens/home.lua:183 piclo/ui/screens/packs.lua:96
 msgid "%1 of %2 solved"
 msgstr ""
 
-#: piclo/ui/screens/pack.lua:102
+#: piclo/ui/screens/pack.lua:103
 msgid "???"
 msgstr ""
 
-#: piclo/ui/screens/packs.lua:33
+#: piclo/ui/screens/packs.lua:34
 msgid "%1 to %2"
 msgstr ""
 
-#: piclo/ui/screens/packs.lua:67
-msgid "Solve %1 in %2 to unlock"
-msgstr ""
-
 #: piclo/ui/screens/packs.lua:69
+msgid "Solve 1 in %2 to unlock"
+msgid_plural "Solve %1 in %2 to unlock"
+msgstr[0] ""
+msgstr[1] ""
+
+#: piclo/ui/screens/packs.lua:71
 msgid "%1 · All %2 solved"
 msgstr ""
 
-#: piclo/ui/screens/packs.lua:71
+#: piclo/ui/screens/packs.lua:73
 msgid "%1 · %2 of %3 solved"
 msgstr ""
 
@@ -488,112 +499,113 @@ msgstr ""
 msgid "New pack unlocked:"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:31
+#: piclo/ui/screens/settings.lua:32
 msgid "Gameplay"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:32
+#: piclo/ui/screens/settings.lua:33
 msgid "Mistake checking"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:33
+#: piclo/ui/screens/settings.lua:34
 msgid "Instant"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:33
+#: piclo/ui/screens/settings.lua:34
 msgid "Off"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:33
+#: piclo/ui/screens/settings.lua:34
 msgid "On request"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:34
+#: piclo/ui/screens/settings.lua:35
 msgid "Highlight completed clues"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:35
+#: piclo/ui/screens/settings.lua:36
 msgid "Finished numbers turn gray"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:36
+#: piclo/ui/screens/settings.lua:37
 msgid "Hold a square to"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:37
+#: piclo/ui/screens/settings.lua:38
 msgid "Use other tool"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:39
+#: piclo/ui/screens/settings.lua:40
 msgid "Display"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:40
+#: piclo/ui/screens/settings.lua:41
 msgid "Show timer in header"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:41
+#: piclo/ui/screens/settings.lua:42
 msgid "Updates once a minute"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:42
+#: piclo/ui/screens/settings.lua:43
 msgid "Clear ghosting every"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:43
+#: piclo/ui/screens/settings.lua:44
 msgid "Never"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:44
+#: piclo/ui/screens/settings.lua:45
 msgid "Moves between flashes"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:45
+#: piclo/ui/screens/settings.lua:46
 msgid "Toolbar in landscape"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:46
+#: piclo/ui/screens/settings.lua:47
 msgid "Left"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:46
+#: piclo/ui/screens/settings.lua:47
 msgid "Right"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:48
+#: piclo/ui/screens/settings.lua:49
 msgid "Data"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:49
+#: piclo/ui/screens/settings.lua:50
+msgctxt "Piclo"
 msgid "Reset all progress"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:50
+#: piclo/ui/screens/settings.lua:51
 msgid "Clears every board, time and solved picture"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:62
+#: piclo/ui/screens/settings.lua:63
 msgid "Piclo %1"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:85
+#: piclo/ui/screens/settings.lua:86
 msgid "Made by %1"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:97
+#: piclo/ui/screens/settings.lua:98
 msgid "All progress cleared"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:252
+#: piclo/ui/screens/settings.lua:253
 msgid "Reset all progress?"
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:253
+#: piclo/ui/screens/settings.lua:254
 msgid ""
 "Every board, time and solved picture will be cleared, and packs lock again. "
 "Settings stay. This can't be undone."
 msgstr ""
 
-#: piclo/ui/screens/settings.lua:254
+#: piclo/ui/screens/settings.lua:255
 msgid "Reset"
 msgstr ""

@@ -10,8 +10,8 @@ Input:
   drag / flick    active tool along a straight run, as one move
   page keys       switch between Fill and Cross
 
-Short messages ("No mistakes so far") replace the header title until the
-next move, rather than popping up. The optional timer in the header moves
+Short messages ("No mistakes so far", or why instant checking stopped a
+fill) show in the header until the next move, rather than popping up. The optional timer in the header moves
 on once a minute.
 
 A practice board (from How to play) has a guide under the grid instead of
@@ -190,6 +190,8 @@ function GameScreen:apply(report, extra)
     self.app:onMove(self.game, report)
     self.edits = self.edits + 1
     if self.panel and not report.solved then self:guide() end
+    -- Instant checking stopped a fill: say why, or it feels like a dropped touch.
+    if report.rejected then self:say(_("That square stays empty")) end
     if report.solved then
         self:onSolved()
     elseif self.deghost_every and self.edits % self.deghost_every == 0 then
@@ -270,9 +272,12 @@ function GameScreen:onTick()
     if text ~= self.header.aside then
         local window = self.window
         local rect = self.header:setAside(text)
-        -- Under another window (a dialog, the sleep screen) the next full
-        -- repaint shows the new time instead.
-        if window and not window.sheet and Refresh.canPaintDirect(window) then
+        -- Under another window (a dialog, the sleep screen) or a sheet the
+        -- next full repaint shows the new time instead. A sheet sits at the
+        -- bottom, so the header above it still shows it now.
+        local sheet = window and window.sheet
+        local covered = sheet and sheet.rect and sheet.rect.y < rect.y + rect.h
+        if window and not covered and Refresh.canPaintDirect(window) then
             Refresh.regions(window, "ui", { rect }, function(bb) self.header:paint(bb) end)
         end
     end

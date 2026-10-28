@@ -61,6 +61,38 @@ describe("hint", function()
         assert.are.equal(5, #h.assignments)
     end)
 
+    it("prefers a line that adds a fill over one that only adds crosses", function()
+        -- row 1 is finished but its three empty squares are not crossed yet;
+        -- column 1 (clue 2) can still fill row 3 with nothing else marked
+        local p = puzzle({
+            "#....",
+            "#....",
+            ".....",
+            ".....",
+            ".....",
+        })
+        local cells = blank(p)
+        cells[1] = Cell.FILLED
+        local h = Solver.hint(p, cells)
+        local fills = 0
+        for _, a in ipairs(h.assignments) do
+            if a.to == Cell.FILLED then fills = fills + 1 end
+        end
+        assert.is_true(fills > 0)
+    end)
+
+    it("still offers crosses when no line can add a fill", function()
+        local cells = {}
+        for i, s in ipairs(HEART.solution) do
+            cells[i] = s == Cell.FILLED and s or Cell.UNKNOWN
+        end
+        local h = Solver.hint(HEART, cells)
+        assert.is_true(h ~= nil and #h.assignments > 0)
+        for _, a in ipairs(h.assignments) do
+            assert.are.equal(Cell.CROSSED, a.to)
+        end
+    end)
+
     it("corrects a wrong mark inside the hinted line", function()
         local cells = blank(HEART)
         cells[6] = Cell.CROSSED -- row 2, col 1 is really filled

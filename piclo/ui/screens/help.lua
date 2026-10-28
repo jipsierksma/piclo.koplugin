@@ -11,6 +11,7 @@ local TextBoxWidget = require("ui/widget/textboxwidget")
 local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local C_ = require("piclo/l10n").pgettext
 local Cell = require("piclo/model/cell")
 local Glyphs = require("piclo/ui/glyphs")
 local HeaderBar = require("piclo/ui/components/header_bar")
@@ -36,11 +37,13 @@ local function content()
         { kind = "heading", text = _("Marking squares") },
         { kind = "para", text = _("Choose Fill or Cross in the toolbar, then tap a square. Tap it again to clear it. Hold a square to use the other tool. Drag along a row or column to mark several squares at once. The page-turn buttons switch tools.") },
         { kind = "icons", items = { { "fill", _("Fill") }, { "cross", _("Cross") } } },
+        -- Where the second page starts when it all doesn't fit on one.
+        { kind = "break" },
         { kind = "heading", text = _("Getting stuck") },
         { kind = "para", text = _("The bulb in the toolbar fills in the next line that can be worked out and highlights its numbers. Undo takes the step back. In Settings you can also have mistakes checked, on request (with the magnifier) or as you play.") },
         { kind = "icons", items = { { "hint", _("Hint") }, { "undo", _("Undo") }, { "inspect", _("Check") } } },
         { kind = "heading", text = _("Finishing") },
-        { kind = "para", text = _("A number turns gray once its run is complete. When every filled square is right, the picture appears and joins your collection. Solving puzzles in a pack unlocks the next one.") },
+        { kind = "para", text = _("A number turns gray once its run is complete. Gray means the count fits, not that the run is in the right place. When every filled square is right, the picture appears and joins your collection. Solving puzzles in a pack unlocks the next one.") },
     }
 end
 
@@ -55,7 +58,7 @@ function HelpScreen.new(opts)
             on_tap = function() app:startPractice(1) end }
     end
     if opts.first_run then
-        self.done_btn = TextButton.new{ text = _("Got it"), primary = true, on_tap = back }
+        self.done_btn = TextButton.new{ text = C_("Piclo", "Got it"), primary = true, on_tap = back }
     end
     -- Left to right, the main one last.
     self.buttons = {}
@@ -157,23 +160,14 @@ function HelpScreen:layout(dimen)
     local top = Theme.header_h + Theme.space.l
     local bottom = H - Theme.touch - Theme.space.s
     if #self.buttons > 0 then bottom = self:layoutButtons(W, H, m) - Theme.touch end
-    self.pages = { {} }
-    local items, blocks = content(), {}
-    for k, item in ipairs(items) do blocks[k] = self:block(item, width) end
-    local y = top
-    for k, item in ipairs(items) do
-        local b = blocks[k]
-        local gap = (k == 1) and 0 or b.gap
-        -- A heading only goes where the block after it fits too.
-        local need = b.h
-        if item.kind == "heading" and blocks[k + 1] then need = need + blocks[k + 1].gap + blocks[k + 1].h end
-        if y + gap + need > bottom and #self.pages[#self.pages] > 0 then
-            self.pages[#self.pages + 1] = {}
-            y, gap = top, 0
-        end
-        y = y + gap
-        table.insert(self.pages[#self.pages], { block = b, y = y })
-        y = y + b.h
+    local items, blocks = {}, {}
+    for __, item in ipairs(content()) do
+        if item.kind ~= "break" then blocks[#blocks + 1] = self:block(item, width) end
+        items[#items + 1] = item
+    end
+    -- Page breaks only count when the text doesn't fit on one page anyway.
+    if self:paginate(items, blocks, top, bottom, false) then
+        self:paginate(items, blocks, top, bottom, true)
     end
     self.page = math.max(1, math.min(self.page, #self.pages))
     self.pager = nil
@@ -183,6 +177,41 @@ function HelpScreen:layout(dimen)
         self.widgets[#self.widgets + 1] = self.pager
         self.pager_rect = { x = 0, y = bottom, w = W, h = Theme.touch }
     end
+end
+
+--[[
+Lays the blocks out into self.pages; with use_breaks, a "break" item starts
+a new page. Returns whether more than one page was needed.
+]]
+function HelpScreen:paginate(items, blocks, top, bottom, use_breaks)
+    self.pages = { {} }
+    local y, k = top, 0
+    for idx, item in ipairs(items) do
+        if item.kind == "break" then
+            if use_breaks and #self.pages[#self.pages] > 0 then
+                self.pages[#self.pages + 1] = {}
+                y = top
+            end
+        else
+            k = k + 1
+            local b = blocks[k]
+            local gap = (#self.pages[#self.pages] == 0) and 0 or b.gap
+            -- A heading only goes where the block after it fits too.
+            local need = b.h
+            local nxt = blocks[k + 1]
+            if item.kind == "heading" and nxt and items[idx + 1].kind ~= "break" then
+                need = need + nxt.gap + nxt.h
+            end
+            if y + gap + need > bottom and #self.pages[#self.pages] > 0 then
+                self.pages[#self.pages + 1] = {}
+                y, gap = top, 0
+            end
+            y = y + gap
+            table.insert(self.pages[#self.pages], { block = b, y = y })
+            y = y + b.h
+        end
+    end
+    return #self.pages > 1
 end
 
 --[[

@@ -1,0 +1,10 @@
+# GitHub's source zips (and so the KOReader AppStore plugin's "Direct download
+# from repo") contain only what the plugin needs at runtime.
+/spec export-ignore
+/tools export-ignore
+/docs export-ignore
+/Makefile export-ignore
+/.luacheckrc export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore
+/README.md export-ignore

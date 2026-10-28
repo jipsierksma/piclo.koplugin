@@ -22,6 +22,7 @@ local T = require("ffi/util").template
 local _ = require("gettext")
 local Format = require("piclo/util/format")
 local N_ = _.ngettext
+local C_ = require("piclo/l10n").pgettext
 local Icons = require("piclo/ui/icons")
 local Label = require("piclo/ui/components/label")
 local ListRow = require("piclo/ui/components/list_row")
@@ -44,7 +45,7 @@ function HomeScreen.new(opts)
     local self = setmetatable({ app = app, labels = {}, rows = {} }, HomeScreen)
     self.spot = app:collection():spotlight()
     local spot = self.spot
-    local pill = { start = _("Start"), continue = _("Continue"), play = _("Play") }
+    local pill = { start = _("Start"), continue = C_("Piclo", "Continue"), play = _("Play") }
     if pill[spot.kind] then
         self.primary = TextButton.new{ text = pill[spot.kind], primary = true,
             on_tap = function() app:openPuzzle(spot.puzzle) end }
