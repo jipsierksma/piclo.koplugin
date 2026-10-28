@@ -6,6 +6,7 @@ and Show solution ask first, in a confirm sheet that replaces the menu.
 
 local T = require("ffi/util").template
 local _ = require("gettext")
+local C_ = require("piclo/l10n").pgettext
 local Format = require("piclo/util/format")
 local Sheet = require("piclo/ui/components/sheet")
 
@@ -20,7 +21,7 @@ function GameMenu.confirmRestart(screen)
     window:showSheet(Sheet.confirm{
         title = _("Restart this puzzle?"),
         text = _("Your marks and time on this board will be cleared."),
-        ok_text = _("Restart"),
+        ok_text = C_("Piclo", "Restart"),
         on_ok = function()
             window:closeSheet(false)
             app:restartGame()

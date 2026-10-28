@@ -13,6 +13,7 @@ returning to a game shows the new behaviour straight away.
 local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local C_ = require("piclo/l10n").pgettext
 local HeaderBar = require("piclo/ui/components/header_bar")
 local Icons = require("piclo/ui/icons")
 local Label = require("piclo/ui/components/label")
@@ -46,7 +47,7 @@ local function groups()
                 choices = { { "left", _("Left") }, { "right", _("Right") } } },
         } },
         { title = _("Data"), rows = {
-            { action = "reset", label = _("Reset all progress"),
+            { action = "reset", label = C_("Piclo", "Reset all progress"),
                 notes = _("Clears every board, time and solved picture") },
         } },
     }

@@ -136,7 +136,7 @@ end
 -- Gestures: the screen decides (or an open sheet, which only takes taps);
 -- we always consume them so nothing leaks to the reader or file browser
 -- underneath.
-local function forward(method)
+local function forwardGesture(method)
     return function(self, _, ges)
         if method == "onTap" and self:guarded() then return true end
         self.app:onInput()
@@ -149,13 +149,13 @@ local function forward(method)
         return true
     end
 end
-Host.onTap = forward("onTap")
-Host.onHold = forward("onHold")
-Host.onHoldRelease = forward("onHoldRelease")
-Host.onHoldPan = forward("onHoldPan")
-Host.onPan = forward("onPan")
-Host.onPanRelease = forward("onPanRelease")
-Host.onSwipe = forward("onSwipe")
+Host.onTap = forwardGesture("onTap")
+Host.onHold = forwardGesture("onHold")
+Host.onHoldRelease = forwardGesture("onHoldRelease")
+Host.onHoldPan = forwardGesture("onHoldPan")
+Host.onPan = forwardGesture("onPan")
+Host.onPanRelease = forwardGesture("onPanRelease")
+Host.onSwipe = forwardGesture("onSwipe")
 
 function Host:onClose()
     if self.sheet then

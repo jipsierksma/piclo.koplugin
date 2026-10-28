@@ -97,7 +97,7 @@ function Puzzle.new(def)
     if type(def.id) ~= "string" or def.id == "" then
         return nil, "puzzle needs a string id"
     end
-    local rows_def, shade_def, err = def.rows, def.shade, nil
+    local rows_def, shade_def, err = def.rows, def.shade
     if def.art ~= nil then
         if def.rows ~= nil or def.shade ~= nil then
             return nil, def.id .. ": give either art or rows/shade, not both"

@@ -27,8 +27,10 @@ function Coach.load(path)
     end
     local list = {}
     for k, lesson in ipairs(data) do
-        local ok = type(lesson) == "table" and type(lesson.steps) == "table" and #lesson.steps > 0
-        local puzzle, perr = ok and Puzzle.new{ id = lesson.id, art = lesson.art }
+        local puzzle, perr = nil, "needs a list of steps"
+        if type(lesson) == "table" and type(lesson.steps) == "table" and #lesson.steps > 0 then
+            puzzle, perr = Puzzle.new{ id = lesson.id, art = lesson.art }
+        end
         if puzzle then
             lesson.puzzle = puzzle
             list[#list + 1] = lesson

@@ -9,6 +9,7 @@ Pages with swipes and the page-turn keys when the rows don't fit one screen.
 local T = require("ffi/util").template
 local UIManager = require("ui/uimanager")
 local _ = require("gettext")
+local N_ = _.ngettext
 local HeaderBar = require("piclo/ui/components/header_bar")
 local Label = require("piclo/ui/components/label")
 local ListRow = require("piclo/ui/components/list_row")
@@ -64,7 +65,8 @@ function PacksScreen:row(pack, y, W)
     local done = info.unlocked and info.solved == info.total
     local sub
     if not info.unlocked then
-        sub = T(_("Solve %1 in %2 to unlock"), info.rule.count, info.rule.after_title)
+        local n = info.rule.count
+        sub = T(N_("Solve 1 in %2 to unlock", "Solve %1 in %2 to unlock", n), n, info.rule.after_title)
     elseif done then
         sub = T(_("%1 · All %2 solved"), packSize(pack), info.total)
     else

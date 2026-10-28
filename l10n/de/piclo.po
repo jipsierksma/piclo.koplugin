@@ -1,0 +1,666 @@
+# German translation of Piclo.
+# Copyright (C) 2026 Jip Sierksma
+# This file is distributed under the same license as Piclo (AGPL-3.0).
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Piclo\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-28 23:25+0100\n"
+"PO-Revision-Date: 2026-10-28 23:30+0100\n"
+"Last-Translator: Jip Sierksma\n"
+"Language-Team: none\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: main.lua:32 main.lua:47
+msgid "Piclo puzzles"
+msgstr "Piclo-Rätsel"
+
+#: piclo/app/routes.lua:71 piclo/ui/screens/home.lua:128
+msgid "%1 · %2"
+msgstr "%1 · %2"
+
+#: piclo/app/routes.lua:90
+msgid "Practice %1 of %2"
+msgstr "Übung %1 von %2"
+
+#: piclo/app/routes.lua:96
+msgctxt "Piclo"
+msgid "Done"
+msgstr "Fertig"
+
+#: piclo/app/routes.lua:96
+msgid "Next practice"
+msgstr "Nächste Übung"
+
+#: piclo/coach.lua:131
+msgid ""
+"The marked square doesn't fit the numbers. Tap it to change it, or use Undo."
+msgstr ""
+"Das markierte Feld passt nicht zu den Zahlen. Tippe es an, um es zu ändern, "
+"oder nutze „Rückgängig“."
+
+#: piclo/data/packs/house.lua:4
+msgid "Around the House"
+msgstr "Rund ums Haus"
+
+#: piclo/data/packs/house.lua:11
+msgid "Toaster"
+msgstr "Toaster"
+
+#: piclo/data/packs/house.lua:27
+msgid "Chair"
+msgstr "Stuhl"
+
+#: piclo/data/packs/house.lua:43
+msgid "Teacup"
+msgstr "Teetasse"
+
+#: piclo/data/packs/house.lua:59
+msgid "Teapot"
+msgstr "Teekanne"
+
+#: piclo/data/packs/house.lua:75
+msgid "Sock"
+msgstr "Socke"
+
+#: piclo/data/packs/house.lua:91
+msgid "Candle"
+msgstr "Kerze"
+
+#: piclo/data/packs/house.lua:107
+msgid "Alarm clock"
+msgstr "Wecker"
+
+#: piclo/data/packs/house.lua:123
+msgid "Light bulb"
+msgstr "Glühbirne"
+
+#: piclo/data/packs/house.lua:139
+msgid "Key"
+msgstr "Schlüssel"
+
+#: piclo/data/packs/house.lua:155
+msgid "Table lamp"
+msgstr "Tischlampe"
+
+#: piclo/data/packs/house.lua:171
+msgid "Rubber duck"
+msgstr "Quietscheente"
+
+#: piclo/data/packs/starter.lua:7
+msgid "First Steps"
+msgstr "Erste Schritte"
+
+#: piclo/data/packs/starter.lua:14
+msgid "Egg"
+msgstr "Ei"
+
+#: piclo/data/packs/starter.lua:26
+msgid "Chick"
+msgstr "Küken"
+
+#: piclo/data/packs/starter.lua:39
+msgid "First flap"
+msgstr "Erstes Flattern"
+
+#: piclo/data/packs/starter.lua:53
+msgid "Flight"
+msgstr "Abflug"
+
+#: piclo/data/packs/woods.lua:4
+msgid "In the Woods"
+msgstr "Im Wald"
+
+#: piclo/data/packs/woods.lua:11
+msgid "Tent"
+msgstr "Zelt"
+
+#: piclo/data/packs/woods.lua:32
+msgid "Snail"
+msgstr "Schnecke"
+
+#: piclo/data/packs/woods.lua:53
+msgid "Butterfly"
+msgstr "Schmetterling"
+
+#: piclo/data/packs/woods.lua:74
+msgid "Owl"
+msgstr "Eule"
+
+#: piclo/data/packs/woods.lua:95
+msgid "Acorn"
+msgstr "Eichel"
+
+#: piclo/data/packs/woods.lua:116
+msgid "Pine cone"
+msgstr "Tannenzapfen"
+
+#: piclo/data/packs/woods.lua:137
+msgid "Mushroom"
+msgstr "Pilz"
+
+#: piclo/data/packs/woods.lua:158
+msgid "Campfire"
+msgstr "Lagerfeuer"
+
+#: piclo/data/practice.lua:28
+msgid ""
+"The top row says 5, and it has five squares: every one of them is filled. "
+"Tap each square, or drag along the row."
+msgstr ""
+"Neben der obersten Zeile steht eine 5, und die Zeile hat genau fünf Felder. "
+"Sie werden also alle ausgefüllt. Tippe die Felder nacheinander an oder zieh "
+"den Finger über die Zeile."
+
+#: piclo/data/practice.lua:30
+msgid "Rows 3 and 5 say 5 too. Fill them."
+msgstr "Auch neben den Zeilen 3 und 5 steht eine 5. Füll sie aus."
+
+#: piclo/data/practice.lua:32
+msgid ""
+"Row 2 says 1 1 1: three single squares with a gap between each. That takes "
+"exactly five squares, so they only fit one way. Fill the three."
+msgstr ""
+"Neben Zeile 2 steht 1 1 1: drei einzelne Felder mit je einer Lücke "
+"dazwischen. Das ergibt genau fünf Felder, es gibt also nur eine Möglichkeit. "
+"Füll die drei Felder aus."
+
+#: piclo/data/practice.lua:34
+msgid ""
+"The gaps stay empty. Choose Cross in the toolbar and cross them, so you can "
+"see the row is done."
+msgstr ""
+"Die Lücken bleiben leer. Wähle in der Werkzeugleiste „Ankreuzen“ und kreuze "
+"sie an. Dann siehst du sofort, dass die Zeile fertig ist."
+
+#: piclo/data/practice.lua:36
+msgid "Row 4 is the same as row 2. Fill it to finish the picture."
+msgstr ""
+"Für Zeile 4 gilt dasselbe wie für Zeile 2. Füll sie aus, dann ist das Bild "
+"fertig."
+
+#: piclo/data/practice.lua:38
+msgid ""
+"Solved. Every puzzle works like this: find a line you can be sure of, mark "
+"it, and move on."
+msgstr ""
+"Gelöst! So funktioniert jedes Rätsel: Such dir eine Zeile oder Spalte, bei "
+"der du dir sicher bist, trag sie ein und mach mit der nächsten weiter."
+
+#: piclo/data/practice.lua:51
+msgid "Rows 2 and 3 say 5. Fill them."
+msgstr "Neben den Zeilen 2 und 3 steht eine 5. Füll sie aus."
+
+#: piclo/data/practice.lua:53
+msgid ""
+"Column 3 says 4. Its run starts at the top or one square lower, and both "
+"ways cover the middle three squares. Fill those."
+msgstr ""
+"Über Spalte 3 steht eine 4. Der Block beginnt entweder ganz oben oder ein "
+"Feld tiefer. In beiden Fällen deckt er die drei mittleren Felder ab. Füll "
+"diese aus."
+
+#: piclo/data/practice.lua:55
+msgid "Columns 2 and 4 say 4 as well. Fill their middle three."
+msgstr ""
+"Auch über den Spalten 2 und 4 steht eine 4. Füll dort jeweils die drei "
+"mittleren Felder aus."
+
+#: piclo/data/practice.lua:57
+msgid ""
+"Row 4 says 3, and its run of three is there. The row is complete: cross its "
+"other squares."
+msgstr ""
+"Neben Zeile 4 steht eine 3, und der Dreierblock ist schon da. Die Zeile ist "
+"also fertig: Kreuze die übrigen Felder an."
+
+#: piclo/data/practice.lua:59
+msgid "Columns 1 and 5 say 2, and both have their two. Cross the rest of them."
+msgstr ""
+"Über den Spalten 1 und 5 steht eine 2, und beide haben ihre zwei Felder "
+"schon. Kreuze dort die übrigen Felder an."
+
+#: piclo/data/practice.lua:61
+msgid ""
+"Row 1 says 1 1, with three squares left. Two runs need a gap between them, "
+"so they take the outer two. Fill those and cross the middle."
+msgstr ""
+"Neben Zeile 1 steht 1 1, und drei Felder sind noch frei. Zwischen zwei "
+"Blöcken muss eine Lücke sein, also kommen sie in die beiden äußeren Felder. "
+"Füll diese aus und kreuze das mittlere an."
+
+#: piclo/data/practice.lua:63
+msgid ""
+"Finish the picture on your own. When you're stuck, the bulb in the toolbar "
+"shows the next step."
+msgstr ""
+"Jetzt bist du dran: Mach das Bild allein fertig. Wenn du nicht weiterkommst, "
+"zeigt dir die Glühbirne in der Werkzeugleiste den nächsten Schritt."
+
+#: piclo/data/practice.lua:65
+msgid ""
+"Solved. That's all there is to it. The packs start small and grow from there."
+msgstr ""
+"Gelöst! Mehr steckt nicht dahinter. Die Rätsel fangen klein an und werden "
+"von Paket zu Paket größer."
+
+#: piclo/ui/components/sheet.lua:34
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: piclo/ui/screens/game.lua:194
+msgid "That square stays empty"
+msgstr "Dieses Feld bleibt leer"
+
+#: piclo/ui/screens/game.lua:214
+msgid "Nothing left to hint"
+msgstr "Keine Tipps mehr"
+
+#: piclo/ui/screens/game.lua:216
+msgid "Fix the marked square first"
+msgstr "Korrigiere zuerst das markierte Feld"
+
+#: piclo/ui/screens/game.lua:224
+msgid "No mistakes so far"
+msgstr "Bisher keine Fehler"
+
+#: piclo/ui/screens/game.lua:226
+msgid "1 square is wrong"
+msgid_plural "%1 squares are wrong"
+msgstr[0] "1 Feld ist falsch"
+msgstr[1] "%1 Felder sind falsch"
+
+#: piclo/ui/screens/game.lua:256
+msgid "%1 min"
+msgstr "%1 Min."
+
+#: piclo/ui/screens/game.lua:257
+msgid "%1 h %2 min"
+msgstr "%1 Std. %2 Min."
+
+#: piclo/ui/screens/game_menu.lua:22
+msgid "Restart this puzzle?"
+msgstr "Dieses Rätsel neu starten?"
+
+#: piclo/ui/screens/game_menu.lua:23
+msgid "Your marks and time on this board will be cleared."
+msgstr "Deine Markierungen und deine Zeit für dieses Rätsel werden gelöscht."
+
+#: piclo/ui/screens/game_menu.lua:24
+msgctxt "Piclo"
+msgid "Restart"
+msgstr "Neu starten"
+
+#: piclo/ui/screens/game_menu.lua:35
+msgid "Show the solution?"
+msgstr "Lösung anzeigen?"
+
+#: piclo/ui/screens/game_menu.lua:36
+msgid ""
+"The picture joins your collection as revealed rather than solved. You can "
+"play it again any time."
+msgstr ""
+"Das Bild kommt in deine Sammlung, wird aber als aufgedeckt statt als gelöst "
+"markiert. Du kannst das Rätsel jederzeit noch mal spielen."
+
+#: piclo/ui/screens/game_menu.lua:37 piclo/ui/screens/game_menu.lua:53
+msgid "Show solution"
+msgstr "Lösung anzeigen"
+
+#: piclo/ui/screens/game_menu.lua:50
+msgid "Played for %1"
+msgstr "Spielzeit: %1"
+
+#: piclo/ui/screens/game_menu.lua:52
+msgid "Restart puzzle"
+msgstr "Rätsel neu starten"
+
+#: piclo/ui/screens/game_menu.lua:55 piclo/ui/screens/help.lua:55
+#: piclo/ui/screens/home.lua:55
+msgid "How to play"
+msgstr "Spielanleitung"
+
+#: piclo/ui/screens/game_menu.lua:59 piclo/ui/screens/home.lua:56
+#: piclo/ui/screens/settings.lua:62
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: piclo/ui/screens/help.lua:33
+msgid ""
+"Fill in squares to reveal a hidden picture. The numbers next to each row and "
+"above each column tell you which squares to fill."
+msgstr ""
+"Füll die richtigen Felder aus, damit ein verborgenes Bild zum Vorschein "
+"kommt. Die Zahlen neben jeder Zeile und über jeder Spalte verraten dir, "
+"welche das sind."
+
+#: piclo/ui/screens/help.lua:34
+msgid "Reading the numbers"
+msgstr "Die Zahlen lesen"
+
+#: piclo/ui/screens/help.lua:35
+msgid ""
+"Each number is a run of filled squares, in order from left to right or top "
+"to bottom. Runs are separated by at least one empty square. The row below "
+"reads 3 1: a run of three, a gap, then one more."
+msgstr ""
+"Jede Zahl steht für einen Block ausgefüllter Felder, in derselben "
+"Reihenfolge wie die Zahlen: von links nach rechts bzw. von oben nach unten. "
+"Zwischen zwei Blöcken liegt mindestens ein leeres Feld. Die Zeile unten "
+"zeigt 3 1: ein Dreierblock, eine Lücke, dann noch ein einzelnes Feld."
+
+#: piclo/ui/screens/help.lua:37
+msgid "Marking squares"
+msgstr "Felder markieren"
+
+#: piclo/ui/screens/help.lua:38
+msgid ""
+"Choose Fill or Cross in the toolbar, then tap a square. Tap it again to "
+"clear it. Hold a square to use the other tool. Drag along a row or column to "
+"mark several squares at once. The page-turn buttons switch tools."
+msgstr ""
+"Wähle in der Werkzeugleiste „Ausfüllen“ oder „Ankreuzen“ und tippe dann auf "
+"ein Feld. Tippst du es noch einmal an, wird es wieder leer. Hältst du ein "
+"Feld gedrückt, nutzt du das andere Werkzeug. Zieh den Finger über eine Zeile "
+"oder Spalte, um mehrere Felder auf einmal zu markieren. Mit den "
+"Blättertasten wechselst du das Werkzeug."
+
+#: piclo/ui/screens/help.lua:39 piclo/ui/screens/settings.lua:38
+msgid "Cross"
+msgstr "Ankreuzen"
+
+#: piclo/ui/screens/help.lua:39
+msgid "Fill"
+msgstr "Ausfüllen"
+
+#: piclo/ui/screens/help.lua:42
+msgid "Getting stuck"
+msgstr "Festgefahren?"
+
+#: piclo/ui/screens/help.lua:43
+msgid ""
+"The bulb in the toolbar fills in the next line that can be worked out and "
+"highlights its numbers. Undo takes the step back. In Settings you can also "
+"have mistakes checked, on request (with the magnifier) or as you play."
+msgstr ""
+"Die Glühbirne in der Werkzeugleiste füllt die nächste Zeile oder Spalte aus, "
+"die sich logisch herleiten lässt, und hebt ihre Zahlen hervor. Mit "
+"„Rückgängig“ nimmst du diesen Schritt wieder zurück. In den Einstellungen "
+"kannst du außerdem Fehler prüfen lassen: auf Wunsch (mit der Lupe) oder "
+"sofort beim Spielen."
+
+#: piclo/ui/screens/help.lua:44
+msgid "Check"
+msgstr "Prüfen"
+
+#: piclo/ui/screens/help.lua:44
+msgid "Hint"
+msgstr "Tipp"
+
+#: piclo/ui/screens/help.lua:44
+msgid "Undo"
+msgstr "Rückgängig"
+
+#: piclo/ui/screens/help.lua:45
+msgid "Finishing"
+msgstr "Rätsel abschließen"
+
+#: piclo/ui/screens/help.lua:46
+msgid ""
+"A number turns gray once its run is complete. Gray means the count fits, not "
+"that the run is in the right place. When every filled square is right, the "
+"picture appears and joins your collection. Solving puzzles in a pack unlocks "
+"the next one."
+msgstr ""
+"Eine Zahl wird grau, sobald ihr Block vollständig ist. Grau heißt nur, dass "
+"die Anzahl stimmt, nicht, dass der Block an der richtigen Stelle liegt. Sind "
+"alle ausgefüllten Felder richtig, erscheint das Bild und kommt in deine "
+"Sammlung. Wenn du Rätsel aus einem Paket löst, schaltest du das nächste "
+"Paket frei."
+
+#: piclo/ui/screens/help.lua:57
+msgid "Try a practice puzzle"
+msgstr "Übungsrätsel ausprobieren"
+
+#: piclo/ui/screens/help.lua:61
+msgctxt "Piclo"
+msgid "Got it"
+msgstr "Alles klar"
+
+#: piclo/ui/screens/help.lua:175 piclo/ui/screens/pack.lua:109
+#: piclo/ui/screens/packs.lua:115 piclo/ui/screens/settings.lua:203
+msgid "%1 / %2"
+msgstr "%1 / %2"
+
+#: piclo/ui/screens/home.lua:48
+msgctxt "Piclo"
+msgid "Continue"
+msgstr "Weiterspielen"
+
+#: piclo/ui/screens/home.lua:48
+msgid "Play"
+msgstr "Spielen"
+
+#: piclo/ui/screens/home.lua:48
+msgid "Start"
+msgstr "Loslegen"
+
+#: piclo/ui/screens/home.lua:54 piclo/ui/screens/packs.lua:41
+msgid "Packs"
+msgstr "Rätselpakete"
+
+#: piclo/ui/screens/home.lua:58
+msgid "Close"
+msgstr "Schließen"
+
+#: piclo/ui/screens/home.lua:86 piclo/ui/screens/packs.lua:23
+msgid "%1×%2"
+msgstr "%1×%2"
+
+#: piclo/ui/screens/home.lua:119
+msgid "Every picture found"
+msgstr "Alle Bilder gefunden"
+
+#: piclo/ui/screens/home.lua:119
+msgid "Play them again from Packs"
+msgstr "Unter „Rätselpakete“ noch mal spielen"
+
+#: piclo/ui/screens/home.lua:125
+msgid "1 picture to discover"
+msgid_plural "%1 pictures to discover"
+msgstr[0] "1 Bild zu entdecken"
+msgstr[1] "%1 Bilder zu entdecken"
+
+#: piclo/ui/screens/home.lua:131
+msgid "%1 · %2 played"
+msgstr "%1 · %2 gespielt"
+
+#: piclo/ui/screens/home.lua:133
+msgid "%1 · New"
+msgstr "%1 · Neu"
+
+#: piclo/ui/screens/home.lua:183 piclo/ui/screens/packs.lua:96
+msgid "%1 of %2 solved"
+msgstr "%1 von %2 gelöst"
+
+#: piclo/ui/screens/pack.lua:103
+msgid "???"
+msgstr "???"
+
+#: piclo/ui/screens/packs.lua:34
+msgid "%1 to %2"
+msgstr "%1 bis %2"
+
+#: piclo/ui/screens/packs.lua:69
+msgid "Solve 1 in %2 to unlock"
+msgid_plural "Solve %1 in %2 to unlock"
+msgstr[0] "Löse %1 Rätsel aus „%2“, um es freizuschalten"
+msgstr[1] "Löse %1 Rätsel aus „%2“, um es freizuschalten"
+
+#: piclo/ui/screens/packs.lua:71
+msgid "%1 · All %2 solved"
+msgstr "%1 · Alle %2 gelöst"
+
+#: piclo/ui/screens/packs.lua:73
+msgid "%1 · %2 of %3 solved"
+msgstr "%1 · %2 von %3 gelöst"
+
+#: piclo/ui/screens/reveal.lua:38
+msgid "Revealed"
+msgstr "Aufgedeckt"
+
+#: piclo/ui/screens/reveal.lua:41 piclo/ui/screens/reveal.lua:47
+msgid "Best %1"
+msgstr "Bestzeit %1"
+
+#: piclo/ui/screens/reveal.lua:43
+msgid "Solved in %1"
+msgstr "Gelöst in %1"
+
+#: piclo/ui/screens/reveal.lua:45
+msgid "New best"
+msgstr "Neue Bestzeit"
+
+#: piclo/ui/screens/reveal.lua:63
+msgid "Play again"
+msgstr "Noch mal spielen"
+
+#: piclo/ui/screens/reveal.lua:65 piclo/ui/screens/reveal.lua:71
+#: piclo/ui/screens/reveal.lua:75
+msgid "Back to collection"
+msgstr "Zur Sammlung"
+
+#: piclo/ui/screens/reveal.lua:69
+msgid "Next pack"
+msgstr "Nächstes Paket"
+
+#: piclo/ui/screens/reveal.lua:94
+msgid "%1 of %2 in %3"
+msgstr "%1 von %2 aus „%3“"
+
+#: piclo/ui/screens/reveal.lua:128
+msgid "New pack unlocked: %1"
+msgstr "Neues Paket freigeschaltet: %1"
+
+#: piclo/ui/screens/reveal.lua:133
+msgid "New pack unlocked:"
+msgstr "Neues Paket freigeschaltet:"
+
+#: piclo/ui/screens/settings.lua:32
+msgid "Gameplay"
+msgstr "Spiel"
+
+#: piclo/ui/screens/settings.lua:33
+msgid "Mistake checking"
+msgstr "Fehlerprüfung"
+
+#: piclo/ui/screens/settings.lua:34
+msgid "Instant"
+msgstr "Sofort"
+
+#: piclo/ui/screens/settings.lua:34
+msgid "Off"
+msgstr "Aus"
+
+#: piclo/ui/screens/settings.lua:34
+msgid "On request"
+msgstr "Auf Wunsch"
+
+#: piclo/ui/screens/settings.lua:35
+msgid "Highlight completed clues"
+msgstr "Erledigte Zahlen ausgrauen"
+
+#: piclo/ui/screens/settings.lua:36
+msgid "Finished numbers turn gray"
+msgstr "Sobald ihr Block vollständig ist"
+
+#: piclo/ui/screens/settings.lua:37
+msgid "Hold a square to"
+msgstr "Langes Drücken"
+
+#: piclo/ui/screens/settings.lua:38
+msgid "Use other tool"
+msgstr "Anderes Werkzeug"
+
+#: piclo/ui/screens/settings.lua:40
+msgid "Display"
+msgstr "Anzeige"
+
+#: piclo/ui/screens/settings.lua:41
+msgid "Show timer in header"
+msgstr "Spielzeit oben anzeigen"
+
+#: piclo/ui/screens/settings.lua:42
+msgid "Updates once a minute"
+msgstr "Wird jede Minute aktualisiert"
+
+#: piclo/ui/screens/settings.lua:43
+msgid "Clear ghosting every"
+msgstr "Geisterbilder entfernen alle"
+
+#: piclo/ui/screens/settings.lua:44
+msgid "Never"
+msgstr "Nie"
+
+#: piclo/ui/screens/settings.lua:45
+msgid "Moves between flashes"
+msgstr "Züge zwischen zwei Bildauffrischungen"
+
+#: piclo/ui/screens/settings.lua:46
+msgid "Toolbar in landscape"
+msgstr "Werkzeugleiste im Querformat"
+
+#: piclo/ui/screens/settings.lua:47
+msgid "Left"
+msgstr "Links"
+
+#: piclo/ui/screens/settings.lua:47
+msgid "Right"
+msgstr "Rechts"
+
+#: piclo/ui/screens/settings.lua:49
+msgid "Data"
+msgstr "Daten"
+
+#: piclo/ui/screens/settings.lua:50
+msgctxt "Piclo"
+msgid "Reset all progress"
+msgstr "Fortschritt zurücksetzen"
+
+#: piclo/ui/screens/settings.lua:51
+msgid "Clears every board, time and solved picture"
+msgstr "Löscht alle Spielstände, Zeiten und gelösten Bilder"
+
+#: piclo/ui/screens/settings.lua:63
+msgid "Piclo %1"
+msgstr "Piclo %1"
+
+#: piclo/ui/screens/settings.lua:86
+msgid "Made by %1"
+msgstr "Ein Spiel von %1"
+
+#: piclo/ui/screens/settings.lua:98
+msgid "All progress cleared"
+msgstr "Fortschritt zurückgesetzt"
+
+#: piclo/ui/screens/settings.lua:253
+msgid "Reset all progress?"
+msgstr "Gesamten Fortschritt zurücksetzen?"
+
+#: piclo/ui/screens/settings.lua:254
+msgid ""
+"Every board, time and solved picture will be cleared, and packs lock again. "
+"Settings stay. This can't be undone."
+msgstr ""
+"Alle Spielstände, Zeiten und gelösten Bilder werden gelöscht, und die Pakete "
+"werden wieder gesperrt. Deine Einstellungen bleiben erhalten. Das lässt sich "
+"nicht rückgängig machen."
+
+#: piclo/ui/screens/settings.lua:255
+msgid "Reset"
+msgstr "Zurücksetzen"

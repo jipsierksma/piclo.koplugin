@@ -4,7 +4,6 @@ launching, the collection, solving and the reveal, layouts, and play.
 ]]
 
 local H = require("ui_harness")
-local BB = require("ffi/blitbuffer")
 local Cell = require("piclo/model/cell")
 local Dispatcher = require("dispatcher")
 local Event = require("ui/event")
@@ -38,6 +37,10 @@ describe("launching", function()
     it("registers one menu entry and a dispatcher action", function()
         launch()
         assert.is_not_nil(Dispatcher.actions.piclo_open)
+        assert.are.equal("Piclo puzzles", Dispatcher.actions.piclo_open.title)
+        local menu = {}
+        H.plugin:addToMainMenu(menu)
+        assert.are.equal("Piclo puzzles", menu.piclo.text)
         assert.is_true(host.covers_fullscreen)
     end)
 
@@ -258,6 +261,7 @@ describe("solving", function()
         tapRect(host.screen.primary.rect)
         assert.are.equal("pack", top())
         app:back()
+        app:showPacks()
         assert.is_true(host.screen.rows[2].info.unlocked)
     end)
 
@@ -276,10 +280,54 @@ describe("solving", function()
         tapRect(reveal.primary.rect)
         assert.are.equal("pack", top())
         assert.are.equal("house", host.screen.pack.id)
+        -- The puzzle was opened from home, so back goes home.
+        app:back()
+        assert.are.equal("home", top())
+    end)
+
+    it("goes back to Packs from the next pack when the pack was opened there", function()
+        launch()
+        app:back()
+        local puzzles = app:catalog().packs[1].puzzles
+        for k = 1, 3 do app:progress():markSolved(puzzles[k].id, 10) end
+        app:showPacks()
+        app:showPack("starter")
+        app:openPuzzle(puzzles[4])
+        solveByTapping(host.screen, app.game)
+        UIManager:runScheduled()
+        tapRect(host.screen.primary.rect)
+        assert.are.equal("house", host.screen.pack.id)
         app:back()
         assert.are.equal("packs", top())
         app:back()
         assert.are.equal("home", top())
+    end)
+
+    it("goes back home from a collection reached from the home card", function()
+        launch()
+        app:back()
+        tapRect(host.screen.primary.rect)
+        assert.are.equal("game", top())
+        solveByTapping(host.screen, app.game)
+        UIManager:runScheduled()
+        tapRect(host.screen.primary.rect)
+        assert.are.equal("pack", top())
+        app:back()
+        assert.are.equal("home", top())
+    end)
+
+    it("goes back to Packs from a collection opened there", function()
+        launch()
+        app:back()
+        openPacks()
+        tapRect(host.screen.rows[1].rect)
+        tapRect(host.screen.tiles[1].rect)
+        solveByTapping(host.screen, app.game)
+        UIManager:runScheduled()
+        tapRect(host.screen.primary.rect)
+        assert.are.equal("pack", top())
+        app:back()
+        assert.are.equal("packs", top())
     end)
 
     it("doesn't offer a next pack when everything is solved", function()
@@ -453,8 +501,9 @@ describe("reveal placement", function()
                     assert.truthy(pos, p.id .. " title placed")
                     assert.is_true(pos.y + t.h + rv.summary.h <= box.y, p.id .. " title above the picture")
                     local center = pos.x + t.w / 2
-                    assert.is_true(math.abs(center - (box.x + box.w / 2)) <= 1
-                        or pos.x == Theme.space.xl or pos.x + t.w == size[1] - Theme.space.xl, p.id .. " centered on it")
+                    local centered = math.abs(center - (box.x + box.w / 2)) <= 1
+                        or pos.x == Theme.space.xl or pos.x + t.w == size[1] - Theme.space.xl
+                    assert.is_true(centered, p.id .. " centered on it")
                     for _, b in ipairs(rv.buttons) do
                         assert.is_false(overlap(b.rect, box), p.id .. " button clear of the picture")
                     end

@@ -242,7 +242,8 @@ describe("hints", function()
 
     it("solves a puzzle by hints alone", function()
         local g = newGame()
-        local report, steps = nil, 0
+        local report, steps
+        steps = 0
         repeat
             report = g:hint()
             steps = steps + 1

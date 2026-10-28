@@ -77,14 +77,58 @@ describe("practice", function()
         H.solveByTapping(s, H.app.game)
         assert.is_true(s.panel.done)
         assert.are.equal("Done", s.panel.button.text)
-        tapRect(s.panel.button.rect)
-        assert.are.equal("help", top())
-        assert.is_not_nil(screen().done_btn, "still the first-run introduction")
-
         local progress = H.app:progress()
         assert.are.same({}, progress.puzzles)
         assert.is_nil(progress.last_puzzle)
-        assert.are.equal(1, #H.app.stack - 1, "home under How to play, nothing else")
+        -- On the first run, Done moves on to the first puzzle, with home under it.
+        tapRect(s.panel.button.rect)
+        assert.are.equal("game", top())
+        assert.are.equal(H.app:catalog().packs[1].puzzles[1], H.app.game.puzzle)
+        assert.is_nil(H.app.game.practice)
+        assert.are.equal(2, #H.app.stack)
+        H.app:back()
+        assert.are.equal("home", top())
+    end)
+
+    it("ends on home after Done when How to play came from home", function()
+        H.launch()
+        H.app:back()
+        tapRect(screen().help_row.rect)
+        for k = 1, #H.app:lessons() do
+            H.app:startPractice(k, k > 1)
+            H.solveByTapping(screen(), H.app.game)
+        end
+        tapRect(screen().panel.button.rect)
+        assert.are.equal("home", top())
+        assert.are.equal(1, #H.app.stack)
+        assert.are.same({}, H.app:progress().puzzles)
+    end)
+
+    it("keeps the game in play when practising from its menu", function()
+        H.play(1, 2)
+        local game = H.app.game
+        H.tapCell(screen(), 1, 1)
+        H.app:showHelp()
+        tapRect(screen().practice_btn.rect)
+        assert.are.equal("Practice 1 of 2", screen().header.title)
+        -- Back out of the practice and How to play: the same board.
+        H.app:back()
+        assert.are.equal("help", top())
+        H.app:back()
+        assert.are.equal("game", top())
+        assert.are.equal(game, H.app.game)
+        assert.are.equal(game, screen().game)
+        -- Done after the last practice also returns to it.
+        H.app:showHelp()
+        for k = 1, #H.app:lessons() do
+            H.app:startPractice(k, k > 1)
+            H.solveByTapping(screen(), H.app.game)
+        end
+        tapRect(screen().panel.button.rect)
+        assert.are.equal("game", top())
+        assert.are.equal(game, H.app.game)
+        assert.is_nil(H.app.held_game)
+        clean()
     end)
 
     it("goes back with Undo, and offers practice as a pill from the menu", function()

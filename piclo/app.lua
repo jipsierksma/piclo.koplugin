@@ -1,41 +1,28 @@
 --[[
-Navigation controller: owns the plugin window (ui/host), the catalog, saved
+App controller: owns the plugin window (ui/host), the catalog, saved
 progress and the game in play. Screens call it to move around; the window
 passes lifecycle events (suspend, close) up to it.
 
-Navigation is a stack of routes ({name = "home" | "help" | "packs" | "pack"
-| "game" | "reveal" | "settings", ...}); back pops one, so it runs
-collection -> packs -> title -> close. Screens are rebuilt from
-data and settings each time they show, so a changed setting takes effect as
-soon as its screen is back on top.
+Its methods come in three parts: this file (data, settings, lifecycle),
+piclo/app/routes.lua (the screen stack and moving around) and
+piclo/app/play.lua (the game in play and saving it).
 ]]
 
 local UIManager = require("ui/uimanager")
 local Catalog = require("piclo/data/catalog")
 local Coach = require("piclo/coach")
 local Collection = require("piclo/collection")
-local Game = require("piclo/game")
-local GameScreen = require("piclo/ui/screens/game")
-local HelpScreen = require("piclo/ui/screens/help")
-local HomeScreen = require("piclo/ui/screens/home")
-local Host = require("piclo/ui/host")
 local Icons = require("piclo/ui/icons")
 local L10n = require("piclo/l10n")
-local PackScreen = require("piclo/ui/screens/pack")
-local PacksScreen = require("piclo/ui/screens/packs")
 local Progress = require("piclo/storage/progress")
-local RevealScreen = require("piclo/ui/screens/reveal")
-local SettingsScreen = require("piclo/ui/screens/settings")
-local T = require("ffi/util").template
 local _ = require("gettext")
 
 local App = {}
 App.__index = App
 
--- Seconds the finished grid stays up before the reveal.
-App.REVEAL_DELAY = 0.8
--- At most one progress write per this many seconds while playing.
-App.FLUSH_DELAY = 5
+for __, part in ipairs({ "piclo/app/routes", "piclo/app/play" }) do
+    for k, v in pairs(require(part)) do App[k] = v end
+end
 
 --- opts: ui (ReaderUI or FileManager), path (plugin dir), version, progress (tests)
 function App.new(opts)
@@ -93,350 +80,10 @@ function App:setSetting(key, value)
     self:scheduleFlush()
 end
 
--- Navigation --------------------------------------------------------------
-
---- Opens the app on its home screen (with help first, on the very first run).
-function App:open()
-    -- Still open but covered, e.g. a home-screen plugin put itself on top
-    -- when the device woke: rendering would stay out of sight, so close
-    -- (which saves) and open again on top.
-    -- Also when a close is pending: start over rather than close under the player.
-    if self.host and (self.close_task or UIManager:getTopmostVisibleWidget() ~= self.host) then
-        self:close()
-    end
-    if not self.host then
-        self.host = Host:new{ app = self }
-        UIManager:show(self.host)
-    end
-    -- Also covers saves from before unlocks were remembered.
-    self:collection():recordUnlocks()
-    self.stack = { { name = "home" } }
-    if not self:progress().seen_help then
-        self:progress():setSeenHelp()
-        self.stack[2] = { name = "help", first_run = true }
-    end
-    self:render()
-end
-
-function App:build(route)
-    if route.name == "home" then return HomeScreen.new{ app = self } end
-    if route.name == "help" then return HelpScreen.new{ app = self, first_run = route.first_run } end
-    if route.name == "settings" then return SettingsScreen.new{ app = self, cleared = route.cleared } end
-    if route.name == "packs" then return PacksScreen.new{ app = self, page = route.page } end
-    if route.name == "pack" then
-        return PackScreen.new{ app = self, pack = self:catalog():pack(route.pack_id), page = route.page,
-            marked = route.marked }
-    end
-    if route.name == "game" and self.game.practice then return self:buildPractice() end
-    if route.name == "game" then
-        local p = self.game.puzzle
-        local deghost = self:setting("deghost_every")
-        self.game:setMistakeMode(self:setting("mistakes"))
-        return GameScreen.new{
-            app = self,
-            game = self.game,
-            -- e.g. "Around the House · 7"
-            title = T(_("%1 · %2"), self:catalog():pack(p.pack_id).title, p.number),
-            deghost_every = (deghost and deghost > 0) and deghost or nil,
-            highlight_done = self:setting("highlight_done"),
-            hold_action = self:setting("hold_action"),
-            show_timer = self:setting("show_timer"),
-            rail_side = self:setting("rail_side"),
-            unlock_room = self:collection():wouldUnlock(p),
-        }
-    end
-    return RevealScreen.new{ app = self, data = route.data, rail_side = self:setting("rail_side") }
-end
-
--- A practice board: guided, no menu or timer, and nothing is saved.
-function App:buildPractice()
-    local k, n = self.game.practice, #self:lessons()
-    self.game:setMistakeMode("off")
-    return GameScreen.new{
-        app = self,
-        game = self.game,
-        title = T(_("Practice %1 of %2"), k, n),
-        highlight_done = self:setting("highlight_done"),
-        hold_action = self:setting("hold_action"),
-        rail_side = self:setting("rail_side"),
-        practice = {
-            coach = Coach.new(self:lessons()[k]),
-            button = k < n and _("Next practice") or _("Done"),
-            on_button = function()
-                if k < n then self:startPractice(k + 1, true) else self:back() end
-            end,
-        },
-    }
-end
-
---- Opens practice puzzle k on a fresh board, over How to play (or instead of the one before).
-function App:startPractice(k, replace)
-    self:stopGame()
-    self.game = Game.new{ puzzle = self:lessons()[k].puzzle }
-    self.game.practice = k
-    if replace then self:replaceTop{ name = "game" } else self:push{ name = "game" } end
-end
-
--- The timer runs only while the board is on screen.
-function App:render(refresh)
-    local route = self.stack[#self.stack]
-    if self.game then
-        if route.name == "game" then self.game:resume() else self.game:pause() end
-    end
-    self.host:setScreen(self:build(route), refresh)
-end
-
-function App:push(route)
-    self.stack[#self.stack + 1] = route
-    self:render()
-end
-
-function App:replaceTop(route, refresh)
-    self.stack[#self.stack] = route
-    self:render(refresh)
-end
-
-function App:cancelReveal()
-    if self.reveal_task then
-        UIManager:unschedule(self.reveal_task)
-        self.reveal_task = nil
-    end
-end
-
-function App:back()
-    self:cancelReveal()
-    local top = table.remove(self.stack)
-    if top and top.name == "game" then self:stopGame() end
-    if #self.stack == 0 then
-        self:closeSoon()
-    else
-        self:render()
-    end
-end
-
---[[
-Leaving: the window stays a moment (dropping taps) before it closes, so the
-second tap of a double tap can't open something in the file browser below.
-]]
-function App:closeSoon()
-    if not self.host or Host.TAP_GUARD <= 0 then return self:close() end
-    self.host:guard()
-    self.close_task = function()
-        self.close_task = nil
-        self:close()
-    end
-    UIManager:scheduleIn(Host.TAP_GUARD, self.close_task)
-end
-
-function App:showHelp()
-    self:push{ name = "help" }
-end
-
-function App:showSettings()
-    self:push{ name = "settings" }
-end
-
-function App:showPacks()
-    self:push{ name = "packs" }
-end
-
-function App:showPack(pack_id)
-    self:push{ name = "pack", pack_id = pack_id }
-end
-
---- Paged screens remember their page so back returns to it.
-function App:rememberPage(page)
-    local top = self.stack[#self.stack]
-    if top then top.page = page end
-end
-
---- Unsolved puzzles open the board; solved and revealed ones their picture.
-function App:openPuzzle(puzzle)
-    -- Leaving a collection for a puzzle ends its "just solved" moment.
-    local top = self.stack[#self.stack]
-    if top and top.name == "pack" then top.marked = nil end
-    local progress = self:progress()
-    local revealed = progress:isRevealed(puzzle.id)
-    if revealed or progress:isSolved(puzzle.id) then
-        self:push{ name = "reveal", data = {
-            mode = "view",
-            puzzle = puzzle,
-            best = progress:best(puzzle.id),
-            revealed = revealed,
-        } }
-        return
-    end
-    self:startGame(puzzle)
-    self:push{ name = "game" }
-end
-
-function App:playAgain(puzzle)
-    self:progress():restart(puzzle.id)
-    self:startGame(puzzle)
-    self:replaceTop{ name = "game" }
-end
-
---[[
-Returns to the pack's collection, reusing it from the stack if present.
-marked (optional): the puzzle id just solved, which the collection frames.
-]]
-function App:backToCollection(pack_id, marked)
-    local route
-    for k = #self.stack, 1, -1 do
-        local r = self.stack[k]
-        if r.name == "pack" and r.pack_id == pack_id then
-            for j = #self.stack, k + 1, -1 do self.stack[j] = nil end
-            route = r
-            break
-        end
-    end
-    if not route then
-        route = { name = "pack", pack_id = pack_id }
-        self.stack = { { name = "home" }, { name = "packs" }, route }
-    end
-    route.marked = marked
-    -- Open on the page with the new picture.
-    if marked then route.page = nil end
-    self:render()
-end
-
---- From the reveal of a pack's last puzzle to the next pack's collection; back goes to Packs.
-function App:showNextPack(pack_id)
-    local packs = self.stack[2]
-    if not (packs and packs.name == "packs") then packs = { name = "packs" } end
-    self.stack = { { name = "home" }, packs, { name = "pack", pack_id = pack_id } }
-    self:render()
-end
-
 function App:close()
     if self.host then
         UIManager:close(self.host, "flashui")
     end
-end
-
--- The game in play ------------------------------------------------------
-
---- Clears the board in play and starts its time over.
-function App:restartGame()
-    if not self.game then return end
-    self.game:restart()
-    self:saveGame()
-    self:scheduleFlush()
-    self:render()
-end
-
---[[
-"Show solution": records the puzzle as revealed (not solved), forgets the
-board in play and shows the picture.
-]]
-function App:showSolution()
-    local game = self.game
-    if not game then return end
-    game:pause()
-    local progress, p = self:progress(), game.puzzle
-    -- Asked before recording, like the game screen did: the board's room for
-    -- an unlock line has to match the picture's.
-    local unlock_room = self:collection():wouldUnlock(p)
-    progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
-    progress:markSolved(p.id, game:elapsed(), true)
-    self.game = nil
-    self:flush()
-    self:replaceTop({ name = "reveal", data = {
-        mode = "solved",
-        puzzle = p,
-        revealed = true,
-        next_pack = self:collection():nextPackAfter(p),
-        unlocked = {},
-        unlock_room = unlock_room,
-    } }, "full")
-end
-
---- Forgets all puzzle progress (settings stay) and drops the game in play.
-function App:resetProgress()
-    self:cancelReveal()
-    self.game = nil
-    self:progress():resetAll()
-    self:flush()
-    self.stack = { { name = "home" }, { name = "settings", cleared = true } }
-    self:render()
-end
-
-function App:startGame(puzzle)
-    self:stopGame()
-    local progress = self:progress()
-    self.game = Game.new{
-        puzzle = puzzle,
-        cells = progress:board(puzzle),
-        elapsed = progress:elapsed(puzzle.id),
-    }
-    self.game:resume()
-    progress:setLastPuzzle(puzzle.id)
-end
-
-function App:saveGame()
-    local game = self.game
-    if not game or game.solved or game.practice then return end
-    local p = game.puzzle
-    self:progress():saveBoard(p.id, game.board.cells, p.w * p.h, game:elapsed(), game.board:isEmpty())
-end
-
---- Saves and lets go of the game (leaving its screen).
-function App:stopGame()
-    if not self.game then return end
-    self.game:pause()
-    self:saveGame()
-    self.game = nil
-    self:flush()
-end
-
-function App:scheduleFlush()
-    if self.flush_pending then return end
-    self.flush_pending = true
-    UIManager:scheduleIn(App.FLUSH_DELAY, self.flush_task)
-end
-
---- Writes progress now (also cancels a pending debounced write).
-function App:flush()
-    if self.flush_pending then
-        UIManager:unschedule(self.flush_task)
-        self.flush_pending = false
-    end
-    self:saveGame()
-    if self._progress then self._progress:flush() end
-end
-
-function App:onMove()
-    self:saveGame()
-    self:scheduleFlush()
-end
-
--- Records the solve, then shows the reveal after a short pause.
-function App:onSolved(game)
-    local progress, p, collection = self:progress(), game.puzzle, self:collection()
-    local locked_before = collection:lockedPacks()
-    local unlock_room = collection:wouldUnlock(p)
-    progress:saveBoard(p.id, nil, 0, game:elapsed(), true)
-    local result = progress:markSolved(p.id, game:elapsed())
-    local unlocked = collection:newlyUnlocked(locked_before)
-    collection:recordUnlocks()
-    self:flush()
-    local data = {
-        mode = "solved",
-        puzzle = p,
-        elapsed = game:elapsed(),
-        best = progress:best(p.id),
-        result = result,
-        next_pack = collection:nextPackAfter(p),
-        unlock_room = unlock_room,
-        unlocked = unlocked,
-    }
-    self.reveal_task = function()
-        self.reveal_task = nil
-        if not self.host then return end
-        self.game = nil
-        self:replaceTop({ name = "reveal", data = data }, "full")
-    end
-    UIManager:scheduleIn(App.REVEAL_DELAY, self.reveal_task)
 end
 
 -- Lifecycle, called by the window ------------------------------------
@@ -448,6 +95,7 @@ function App:onClosed()
         self.close_task = nil
     end
     self:stopGame()
+    self.held_game = nil
     self:flush()
     self.stack = {}
     self.host = nil

@@ -320,6 +320,7 @@ describe("mistake checking", function()
         tapCell(screen, r, c)
         assert.are.equal(Cell.CROSSED, game:cell(r, c))
         assert.are.equal("rejected", game:mark((r - 1) * game.puzzle.w + c))
+        assert.are.equal("That square stays empty", screen.header.aside)
         clean()
     end)
 end)
@@ -336,6 +337,22 @@ describe("other settings", function()
         clean()
         H.app:back()
         assert.are.equal(0, #UIManager.tasks)
+    end)
+
+    it("keeps the header timer going while the menu is open", function()
+        local screen, game = playWith({ show_timer = true })
+        tapRect(screen.header.right.rect)
+        assert.is_not_nil(H.host.sheet)
+        UIManager:takeRefreshes()
+        game.elapsed_before = 65
+        UIManager:runScheduled()
+        assert.are.equal("1 min", screen.header.aside)
+        local painted = false
+        for __, r in ipairs(UIManager:takeRefreshes()) do
+            if r.region and r.region.y < screen.header.rect.y + screen.header.rect.h then painted = true end
+        end
+        assert.is_true(painted, "header refreshed above the sheet")
+        clean()
     end)
 
     it("has no header timer by default", function()

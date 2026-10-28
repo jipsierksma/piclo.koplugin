@@ -116,7 +116,9 @@ function BoardWidget:paintRowClues(bb, r)
     local x, y, w, h = g:rowClueRect(r)
     local focused = self:focused("row", r)
     bb:paintRect(x, y, w, h, clueBackground(focused))
-    if startsGroup(r, self.game.puzzle.h) and not focused then bb:paintRect(x, y, w, Theme.line.hair, Theme.SECONDARY) end
+    if startsGroup(r, self.game.puzzle.h) and not focused then
+        bb:paintRect(x, y, w, Theme.line.hair, Theme.SECONDARY)
+    end
     local clue, done = self.game.puzzle.row_clues[r], self.game.row_nums[r]
     local x_end = g.board.x + g.row_gutter
     local baseline = y + math.floor((h + self.cap_h) / 2)
@@ -135,7 +137,9 @@ function BoardWidget:paintColClues(bb, c)
     local x, y, w, h = g:colClueRect(c)
     local focused = self:focused("col", c)
     bb:paintRect(x, y, w, h, clueBackground(focused))
-    if startsGroup(c, self.game.puzzle.w) and not focused then bb:paintRect(x, y, Theme.line.hair, h, Theme.SECONDARY) end
+    if startsGroup(c, self.game.puzzle.w) and not focused then
+        bb:paintRect(x, y, Theme.line.hair, h, Theme.SECONDARY)
+    end
     local clue, done = self.game.puzzle.col_clues[c], self.game.col_nums[c]
     local sh = g.measure.slot_h
     local y_end = g.board.y + g.col_gutter

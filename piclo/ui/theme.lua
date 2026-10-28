@@ -60,7 +60,6 @@ function Theme.update()
     Theme.max_cell = s(72)
     Theme.row_h = s(84)
     Theme.min_tile = s(96)
-    Theme.mark = s(8)
     -- scaleBySize is a ceil'd multiply; this ratio lets faceForPx undo it.
     Theme.scale = Screen:scaleBySize(1000) / 1000
     -- White gap between a filled square and its grid lines, so neighbouring

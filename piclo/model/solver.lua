@@ -103,8 +103,11 @@ end
 
 --[[
 Next teaching step from the player's board. Marks that contradict the
-solution are treated as unknown, then the line with the most new deductions
-wins (ties: rows before columns, top/left first). Returns one of
+solution are treated as unknown, then the line that adds the most squares
+wins: new fills and corrected marks count first, new crosses only break ties
+(further ties: rows before columns, top/left first). So a row whose runs are
+all placed, with only its empty squares left to cross, never wins over a line
+where the player can still fill something. Returns one of
   { axis, index, assignments = { {i, to}, ... } }  -- a line deduction
   { mistake = i }                                   -- only errors remain
   nil                                               -- nothing left to do
@@ -122,19 +125,26 @@ function Solver.hint(puzzle, cells)
         clean[i] = s
     end
 
-    local best, best_count, buf = nil, 0, {}
+    -- A fill or correction outweighs any number of crosses in one line.
+    local weight = math.max(puzzle.w, puzzle.h) + 1
+    local best, best_score, buf = nil, 0, {}
     for _, line in ipairs(lines(puzzle)) do
         local m = #line.cells
         for p = 1, m do buf[p] = clean[line.cells[p]] end
         local out, changed = LineSolve.solve(line.clue, buf, m)
-        if out and changed > best_count then
-            best_count = changed
-            best = { axis = line.axis, index = line.index, assignments = {} }
+        if out and changed > 0 then
+            local assignments, score = {}, 0
             for p = 1, m do
                 local i = line.cells[p]
                 if out[p] ~= cells[i] and out[p] ~= UNKNOWN then
-                    best.assignments[#best.assignments + 1] = { i = i, to = out[p] }
+                    assignments[#assignments + 1] = { i = i, to = out[p] }
+                    local strong = out[p] == FILLED or cells[i] ~= UNKNOWN
+                    score = score + (strong and weight or 1)
                 end
+            end
+            if score > best_score then
+                best_score = score
+                best = { axis = line.axis, index = line.index, assignments = assignments }
             end
         end
     end

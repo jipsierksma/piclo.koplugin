@@ -2,7 +2,7 @@
 Pack screen, the collection: a grid of square tiles.
   solved       the finished picture, crisp at a whole-pixel scale, and its title
   revealed     the same, with the title in gray: seen with "Show solution", not earned
-  in progress  the board so far plus a small corner mark, its number underneath
+  in progress  the board so far on a faint grid, its number underneath
   new          a hairline square with "???" inside, its number underneath
 Pages with swipes and the page-turn keys when the tiles don't fit one screen.
 
@@ -53,7 +53,8 @@ function PackScreen:layout(dimen)
 
     local m, gutter = Theme.space.xl, Theme.space.l
     local caption_h = self:label{ text = "?", size = "caption" }.h + Theme.space.xs
-    local area = { x = m, y = Theme.header_h + Theme.space.l, w = W - 2 * m, h = H - Theme.header_h - 2 * Theme.space.l }
+    local area = { x = m, y = Theme.header_h + Theme.space.l, w = W - 2 * m,
+        h = H - Theme.header_h - 2 * Theme.space.l }
     local bottom = H - Theme.space.s
     local t = Theme.touch
     local n = #self.pack.puzzles
@@ -130,9 +131,8 @@ function PackScreen:paintTile(bb, tile)
         Picture.paint(bb, tile.puzzle, inner)
     else
         if tile.cells then
+            -- The faint grid with the squares filled so far already says "started".
             Picture.paint(bb, tile.puzzle, inner, { cells = tile.cells })
-            local mk = Theme.mark
-            bb:paintRect(r.x + r.w - mk - Theme.space.xs, r.y + Theme.space.xs, mk, mk, Theme.BLACK)
         else
             tile.unknown:paintIn(bb, r, "center")
         end

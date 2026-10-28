@@ -5,13 +5,17 @@ LUA ?= luajit
 RUNTIME := _meta.lua main.lua piclo l10n LICENSE CREDITS.md
 DIST := piclo.koplugin.zip
 
-.PHONY: test validate stats dist clean pot
+.PHONY: test validate stats dist clean pot lint
 
 test:
 	$(LUA) spec/run.lua spec/*_spec.lua
 
 validate:
 	$(LUA) tools/validate.lua
+
+# Needs luacheck (e.g. brew install luacheck); settings in .luacheckrc.
+lint:
+	luacheck --no-color --formatter plain .
 
 stats:
 	$(LUA) tools/stats.lua
@@ -31,7 +35,7 @@ clean:
 # Collects every translatable string into l10n/piclo.pot and merges it into
 # each language's piclo.po (new strings appear there untranslated).
 pot:
-	xgettext --language=Lua --from-code=UTF-8 --keyword=_ --keyword=N_:1,2 \
+	xgettext --language=Lua --from-code=UTF-8 --keyword=_ --keyword=N_:1,2 --keyword=C_:1c,2 \
 		--sort-by-file --package-name=Piclo --output=l10n/piclo.pot \
 		main.lua $$(find piclo -name '*.lua' | sort)
 	for po in l10n/*/piclo.po; do [ -f "$$po" ] && msgmerge --quiet --update --backup=none $$po l10n/piclo.pot || true; done

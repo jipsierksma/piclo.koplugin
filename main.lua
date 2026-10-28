@@ -9,6 +9,7 @@ plugin loader keeps this directory on package.path after loading
 local Device = require("device")
 local Dispatcher = require("dispatcher")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
+local L10n = require("piclo/l10n")
 local _ = require("gettext")
 
 local Piclo = WidgetContainer:extend{
@@ -27,20 +28,24 @@ function Piclo:onDispatcherRegisterActions()
     Dispatcher:registerAction("piclo_open", {
         category = "none",
         event = "PicloOpen",
-        title = _("Piclo"),
+        -- Says what it is in a long list of actions; the app's own screens say "Piclo".
+        title = _("Piclo puzzles"),
         general = true,
     })
 end
 
 function Piclo:init()
     if not playable() then return end
+    -- Our own translations, before the menu entry and the action get their names.
+    L10n.load(self.path, _)
     self:onDispatcherRegisterActions()
     self.ui.menu:registerToMainMenu(self)
 end
 
 function Piclo:addToMainMenu(menu_items)
     menu_items.piclo = {
-        text = _("Piclo"),
+        text = _("Piclo puzzles"),
+        -- KOReader adds plugins it doesn't know to the end of this menu.
         sorting_hint = "tools",
         callback = function() self:onPicloOpen() end,
     }
